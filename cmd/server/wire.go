@@ -11,9 +11,8 @@ import (
 )
 
 // wireServer 组装配置、业务服务、HTTP/MCP 接口与启动实例。
-func wireServer(configPath string, logger *zap.Logger) (*Server, error) {
+func wireServer(config configs.Config, logger *zap.Logger) *Server {
 	panic(wire.Build(
-		configs.Load,
 		service.ProviderSet,
 		handler.ProviderSet,
 		newServer,

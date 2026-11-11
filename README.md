@@ -100,24 +100,31 @@ mode = "release"
 
 ### 日志
 
-使用 Zap 输出 JSON 日志，默认级别为 `info`，输出到标准错误。
-启动时创建一个 logger，通过 Wire 注入业务层、Gin 路由和服务实例。
+使用 Zap，默认级别为 `info`，输出到标准错误。
+`server.mode = "release"` 时输出 JSON；`debug` 和 `test` 时输出控制台文本，使用可读的时间戳。
+读取配置后按模式创建一个 logger，通过 Wire 注入业务层、Gin 路由和服务实例。
 `HelloService.Hello` 记录传入的 `name`；Gin 请求和异常恢复日志使用 `gin-contrib/zap`。
-配置加载失败也会通过 Zap 记录，程序返回非零退出码；正常返回或启动失败时会调用 `Sync()` 刷新日志。
+配置加载失败时向标准错误打印错误并返回非零退出码；logger 创建后，程序返回时会调用 `Sync()` 刷新日志。
 
-业务日志示例（省略时间、调用位置等字段）：
+`release` 模式的业务日志示例（省略时间、调用位置等字段）：
 
 ```json
 {"level":"info","logger":"hello","msg":"HelloService.Hello","name":"Alan"}
+```
+
+`debug` / `test` 模式示例：
+
+```text
+2026-11-11T22:00:00.000+0800  INFO  hello  service/hello.go:20  HelloService.Hello  {"name": "Alan"}
 ```
 
 ### Wire 与构建命令
 
 参考 `roomplay` 的组织方式，各层通过 `provider.go` 导出 `ProviderSet`，
 在 `cmd/server/wire.go` 中由 `wireServer()` 汇总，生成实际的构造函数调用。
-`configs.Load` 通过 Viper 读取 TOML 并返回配置或错误，`NewHelloService → NewHandler → NewRouter` 依次组装依赖，
+启动时通过 `configs.Load` 读取并校验 TOML，随后根据运行模式创建日志实例，将配置和 logger 传给 Wire。
+`NewHelloService → NewHandler → NewRouter` 依次组装依赖，
 最后由 `newServer` 接收配置和路由，构造服务实例。
-配置加载错误由 Wire 生成的初始化函数传递到 `main`。
 
 ```bash
 make wire       # 修改构造函数或 ProviderSet 后重新生成 wire_gen.go
