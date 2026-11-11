@@ -18,6 +18,7 @@ agentmesh/
 │   └── server/
 │       ├── main.go          # 调用 Wire 初始化并启动服务
 │       ├── server.go        # 服务实例与启动方法
+│       ├── logger.go        # Zap 构造函数与日志清理
 │       ├── wire.go          # Wire 注入声明（wireinject）
 │       └── wire_gen.go      # Wire 自动生成的组装代码
 ├── internal/
@@ -100,11 +101,11 @@ mode = "release"
 
 ### 日志
 
-使用 Zap，默认级别为 `info`，输出到标准错误。
+使用 Zap，默认级别为 `info`，日志输出到标准输出（stdout）。
 `server.mode = "release"` 时输出 JSON；`debug` 和 `test` 时输出控制台文本，使用可读的时间戳。
-读取配置后按模式创建一个 logger，通过 Wire 注入业务层、Gin 路由和服务实例。
+Wire 调用 `configs.Load` 读取配置，再调用 `newLogger` 按模式创建日志实例，并注入业务层、Gin 路由和服务实例。
 `HelloService.Hello` 记录传入的 `name`；Gin 请求和异常恢复日志使用 `gin-contrib/zap`。
-配置加载失败时向标准错误打印错误并返回非零退出码；logger 创建后，程序返回时会调用 `Sync()` 刷新日志。
+初始化失败时向标准错误打印错误并返回非零退出码；Wire 生成清理函数，程序返回时通过 `cleanup()` 调用 `Sync()` 刷新日志。
 
 `release` 模式的业务日志示例（省略时间、调用位置等字段）：
 
@@ -122,9 +123,10 @@ mode = "release"
 
 参考 `roomplay` 的组织方式，各层通过 `provider.go` 导出 `ProviderSet`，
 在 `cmd/server/wire.go` 中由 `wireServer()` 汇总，生成实际的构造函数调用。
-启动时通过 `configs.Load` 读取并校验 TOML，随后根据运行模式创建日志实例，将配置和 logger 传给 Wire。
+`wireServer(configPath)` 统一组装依赖：`configs.Load → newLogger` 读取并校验配置、创建日志实例；
 `NewHelloService → NewHandler → NewRouter` 依次组装依赖，
 最后由 `newServer` 接收配置和路由，构造服务实例。
+初始化函数返回服务、清理函数和错误，调用方使用 `defer cleanup()` 释放日志资源。
 
 ```bash
 make wire       # 修改构造函数或 ProviderSet 后重新生成 wire_gen.go
