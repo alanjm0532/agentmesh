@@ -3,7 +3,7 @@ An open network that connects AI coding agents across platforms, enabling them t
 
 ## Gin + MCP Server 最小示例
 
-要求 Go 1.27.4 或以上，使用 Gin 和官方 MCP Go SDK。
+要求 Go 1.27.4 或以上，使用 Gin、官方 MCP Go SDK、Wire 依赖注入和 Viper TOML 配置。
 启动入口为 `cmd/server/main.go`：
 
 - `GET /ping`：普通 HTTP 接口，返回 `{"message":"pong"}`。
@@ -16,13 +16,18 @@ An open network that connects AI coding agents across platforms, enabling them t
 agentmesh/
 ├── cmd/
 │   └── server/
-│       └── main.go          # 读取配置、组装依赖、启动服务
+│       ├── main.go          # 调用 Wire 初始化并启动服务
+│       ├── server.go        # 服务实例与启动方法
+│       ├── wire.go          # Wire 注入声明（wireinject）
+│       └── wire_gen.go      # Wire 自动生成的组装代码
 ├── internal/
 │   ├── handler/
 │   │   ├── http.go          # Gin 路由与 HTTP 接口
-│   │   └── mcp.go           # MCP Server 与工具注册
+│   │   ├── mcp.go           # MCP Server 与工具注册
+│   │   └── provider.go      # handler.ProviderSet
 │   ├── service/
-│   │   └── hello.go         # HTTP 和 MCP 共用的业务逻辑
+│   │   ├── hello.go         # HTTP 和 MCP 共用的业务逻辑
+│   │   └── provider.go      # service.ProviderSet
 │   ├── repository/
 │   │   └── doc.go           # 预留数据访问层
 │   ├── model/
@@ -31,7 +36,9 @@ agentmesh/
 │       └── request_id.go    # 请求标识中间件
 ├── pkg/                    # 预留可复用的公共包
 ├── configs/
-│   └── config.go           # 环境变量配置
+│   ├── config.go           # Viper 配置加载与结构体
+│   └── config.toml         # TOML 配置文件
+├── Makefile                # 生成、检查、构建和启动命令
 ├── go.mod
 └── go.sum
 ```
@@ -42,9 +49,13 @@ HTTP 和 MCP 接口都调用 `HelloService.Hello`；业务层不依赖 Gin 或 M
 ### 启动
 
 ```bash
-go mod tidy
-go run ./cmd/server
+make init
+make run
 ```
+
+`wire_gen.go` 和 `bin/` 构建产物已加入 `.gitignore`。
+`make build`、`make run` 和 `make lint` 会自动先生成 Wire 代码。
+直接使用 `go run ./cmd/server` 前，请先执行 `make wire`。
 
 服务监听 `127.0.0.1:8080`。另开终端调用：
 
@@ -53,13 +64,60 @@ curl http://127.0.0.1:8080/ping
 curl 'http://127.0.0.1:8080/hello?name=Alan'
 ```
 
-可通过环境变量修改监听地址，例如：
+### TOML 配置
+
+默认从当前工作目录读取 `configs/config.toml`：
+
+```toml
+[server]
+addr = "127.0.0.1:8080"
+```
+
+在项目根目录启动服务，或通过 `-config` 参数指定配置路径：
 
 ```bash
-SERVER_ADDR=127.0.0.1:8081 go run ./cmd/server
+make wire
+go run ./cmd/server -config /path/to/config.toml
+# 编译后运行同样支持指定路径
+./bin/agentmesh -config /path/to/config.toml
+```
+
+修改 TOML 中的 `server.addr` 即可调整监听地址，例如：
+
+```toml
+[server]
+addr = "127.0.0.1:8081"
 ```
 
 修改端口后，客户端的 MCP URL 也需使用相应端口。
+`server.addr` 未配置时默认为 `127.0.0.1:8080`；配置文件缺失或格式错误时，启动会报错退出。
+
+### Wire 与构建命令
+
+参考 `roomplay` 的组织方式，各层通过 `provider.go` 导出 `ProviderSet`，
+在 `cmd/server/wire.go` 中由 `wireServer()` 汇总，生成实际的构造函数调用。
+`configs.Load` 通过 Viper 读取 TOML 并返回配置或错误，`NewHelloService → NewHandler → NewRouter` 依次组装依赖，
+最后由 `newServer` 接收配置和路由，构造服务实例。
+配置加载错误由 Wire 生成的初始化函数传递到 `main`。
+
+```bash
+make wire       # 修改构造函数或 ProviderSet 后重新生成 wire_gen.go
+make generate   # 生成项目代码（当前为 Wire）
+make fmt        # 格式化代码
+make lint       # go vet 检查
+make build      # 构建 bin/agentmesh
+make all        # 生成代码并构建
+make help       # 查看所有命令
+```
+
+`make build` 默认使用 `sonic avx` 构建标签，启用 Gin 的 Sonic JSON 实现，实际命令为：
+
+```bash
+go build -tags="sonic avx" -o bin/agentmesh ./cmd/server
+```
+
+Wire v0.7.0 通过 `go.mod` 的 `tool` 声明管理，`make wire` 使用 `go tool wire`，
+无需全局安装。请修改 `wire.go` 和各层 `provider.go`，通过命令生成 `wire_gen.go`，不要手动编辑生成文件。
 
 ### 调用 MCP
 

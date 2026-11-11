@@ -1,19 +1,19 @@
 package main
 
 import (
+	"flag"
 	"log"
-
-	"github.com/alanjm0532/agentmesh/configs"
-	"github.com/alanjm0532/agentmesh/internal/handler"
-	"github.com/alanjm0532/agentmesh/internal/service"
 )
 
 func main() {
-	cfg := configs.Load()
-	helloService := &service.HelloService{}
-	router := handler.NewRouter(helloService)
+	configPath := flag.String("config", "configs/config.toml", "TOML 配置文件路径")
+	flag.Parse()
 
-	if err := router.Run(cfg.Addr); err != nil {
+	server, err := wireServer(*configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
 }

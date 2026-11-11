@@ -13,8 +13,11 @@ type Handler struct {
 	helloService *service.HelloService
 }
 
-func NewRouter(helloService *service.HelloService) *gin.Engine {
-	h := &Handler{helloService: helloService}
+func NewHandler(helloService *service.HelloService) *Handler {
+	return &Handler{helloService: helloService}
+}
+
+func NewRouter(h *Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery(), middleware.RequestID())
 	router.GET("/ping", h.ping)
