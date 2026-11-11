@@ -3,8 +3,9 @@ package configs
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 	"github.com/spf13/viper"
 )
 
@@ -13,7 +14,17 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Addr string `mapstructure:"addr"`
+	Addr string `mapstructure:"addr" validate:"notblank"`
+	Mode string `mapstructure:"mode" validate:"oneof=debug release test"`
+}
+
+// Validate 根据结构体标签统一校验配置。
+func (c Config) Validate() error {
+	check := validator.New()
+	if err := check.RegisterValidation("notblank", validators.NotBlank); err != nil {
+		return err
+	}
+	return check.Struct(c)
 }
 
 // Load 从指定 TOML 文件读取配置。
@@ -21,7 +32,6 @@ func Load(path string) (Config, error) {
 	v := viper.New()
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")
-	v.SetDefault("server.addr", "127.0.0.1:8080")
 	if err := v.ReadInConfig(); err != nil {
 		return Config{}, fmt.Errorf("读取配置文件 %q: %w", path, err)
 	}
@@ -30,8 +40,8 @@ func Load(path string) (Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return Config{}, fmt.Errorf("解析配置文件 %q: %w", path, err)
 	}
-	if strings.TrimSpace(cfg.Server.Addr) == "" {
-		return Config{}, fmt.Errorf("配置 server.addr 不能为空")
+	if err := cfg.Validate(); err != nil {
+		return Config{}, fmt.Errorf("校验配置文件 %q: %w", path, err)
 	}
 	return cfg, nil
 }

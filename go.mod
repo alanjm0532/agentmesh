@@ -4,6 +4,7 @@ go 1.27.4
 
 require (
 	github.com/gin-gonic/gin v1.12.0
+	github.com/go-playground/validator/v10 v10.30.6
 	github.com/google/wire v0.7.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/spf13/viper v1.21.0
@@ -21,7 +22,6 @@ require (
 	github.com/gin-contrib/sse v1.2.1 // indirect
 	github.com/go-playground/locales v0.14.2 // indirect
 	github.com/go-playground/universal-translator v0.18.2 // indirect
-	github.com/go-playground/validator/v10 v10.30.6 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/goccy/go-json v0.12.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect

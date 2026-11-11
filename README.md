@@ -71,6 +71,7 @@ curl 'http://127.0.0.1:8080/hello?name=Alan'
 ```toml
 [server]
 addr = "127.0.0.1:8080"
+mode = "release"
 ```
 
 在项目根目录启动服务，或通过 `-config` 参数指定配置路径：
@@ -87,10 +88,15 @@ go run ./cmd/server -config /path/to/config.toml
 ```toml
 [server]
 addr = "127.0.0.1:8081"
+mode = "release"
 ```
 
 修改端口后，客户端的 MCP URL 也需使用相应端口。
-`server.addr` 未配置时默认为 `127.0.0.1:8080`；配置文件缺失或格式错误时，启动会报错退出。
+`server.addr` 和 `server.mode` 都必须在 TOML 中显式配置；配置文件缺失、格式错误或必填项缺失时，启动会报错退出。
+`server.mode` 可选 `debug`、`release`、`test`。
+本地调试时可以设置为 `debug`；`release` 会关闭 Gin 的调试提示，请求访问日志仍然保留。
+配置通过 `Config.Validate()` 统一校验，规则写在字段的 `validate` 标签中；
+`notblank` 校验非空白地址，`oneof` 限定运行模式。
 
 ### Wire 与构建命令
 

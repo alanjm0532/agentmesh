@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/alanjm0532/agentmesh/configs"
 	"github.com/alanjm0532/agentmesh/internal/middleware"
 	"github.com/alanjm0532/agentmesh/internal/model"
 	"github.com/alanjm0532/agentmesh/internal/service"
@@ -17,7 +18,8 @@ func NewHandler(helloService *service.HelloService) *Handler {
 	return &Handler{helloService: helloService}
 }
 
-func NewRouter(h *Handler) *gin.Engine {
+func NewRouter(config configs.Config, h *Handler) *gin.Engine {
+	gin.SetMode(config.Server.Mode)
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery(), middleware.RequestID())
 	router.GET("/ping", h.ping)

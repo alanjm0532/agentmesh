@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := server.Run(); err != nil {
+	if err = server.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
