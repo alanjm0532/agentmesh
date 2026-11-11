@@ -102,7 +102,7 @@ mode = "release"
 ### 日志
 
 使用 Zap，默认级别为 `info`，日志输出到标准输出（stdout）。
-`server.mode = "release"` 时输出 JSON；`debug` 和 `test` 时输出控制台文本，使用可读的时间戳。
+`server.mode = "release"` 时使用 Zap 原生 JSON 编码；`debug` 和 `test` 时使用原生 console 编码，时间戳可读，结构化字段按 Zap 默认格式显示。
 Wire 调用 `configs.Load` 读取配置，再调用 `newLogger` 按模式创建日志实例，并注入业务层、Gin 路由和服务实例。
 `HelloService.Hello` 记录传入的 `name`；Gin 请求和异常恢复日志使用 `gin-contrib/zap`。
 初始化失败时向标准错误打印错误并返回非零退出码；Wire 生成清理函数，程序返回时通过 `cleanup()` 调用 `Sync()` 刷新日志。
