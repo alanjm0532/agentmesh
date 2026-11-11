@@ -3,11 +3,13 @@ module github.com/alanjm0532/agentmesh
 go 1.27.4
 
 require (
+	github.com/gin-contrib/zap v1.1.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/validator/v10 v10.30.6
 	github.com/google/wire v0.7.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/spf13/viper v1.21.0
+	go.uber.org/zap v1.27.1
 )
 
 tool github.com/google/wire/cmd/wire
@@ -49,6 +51,7 @@ require (
 	github.com/ugorji/go/codec v1.3.2 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.10.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/arch v0.33.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect

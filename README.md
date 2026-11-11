@@ -98,6 +98,19 @@ mode = "release"
 配置通过 `Config.Validate()` 统一校验，规则写在字段的 `validate` 标签中；
 `notblank` 校验非空白地址，`oneof` 限定运行模式。
 
+### 日志
+
+使用 Zap 输出 JSON 日志，默认级别为 `info`，输出到标准错误。
+启动时创建一个 logger，通过 Wire 注入业务层、Gin 路由和服务实例。
+`HelloService.Hello` 记录传入的 `name`；Gin 请求和异常恢复日志使用 `gin-contrib/zap`。
+配置加载失败也会通过 Zap 记录，程序返回非零退出码；正常返回或启动失败时会调用 `Sync()` 刷新日志。
+
+业务日志示例（省略时间、调用位置等字段）：
+
+```json
+{"level":"info","logger":"hello","msg":"HelloService.Hello","name":"Alan"}
+```
+
 ### Wire 与构建命令
 
 参考 `roomplay` 的组织方式，各层通过 `provider.go` 导出 `ProviderSet`，
