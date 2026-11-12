@@ -178,3 +178,29 @@ Wire is managed through the `tool` directive in `go.mod`; no global installation
 After changing server dependencies, run `make wire` to generate `internal/server/wire_gen.go`.
 Generate Wire code before running `go run ./cmd/server` directly as well.
 `wire_gen.go` and `bin/` build artifacts are ignored by Git. Do not edit generated files manually.
+
+## CLI Releases
+
+Pushing any Git tag triggers `.github/workflows/release-cli.yml`. The workflow builds the CLI using the Go version declared in `go.mod` and publishes standalone executables to a GitHub Release for that tag after all builds succeed.
+
+| OS | Release Assets |
+| --- | --- |
+| Linux | `agentmesh_linux_amd64`, `agentmesh_linux_arm64` |
+| macOS | `agentmesh_darwin_amd64`, `agentmesh_darwin_arm64` |
+| Windows | `agentmesh_windows_amd64.exe`, `agentmesh_windows_arm64.exe` |
+
+Each asset is a single executable. OS and architecture suffixes give every asset a unique name within the release, with `darwin` identifying macOS.
+The workflow uploads only the six executables.
+
+To trigger a release after the workflow has been committed and pushed:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow uses the repository's automatic `GITHUB_TOKEN` with `contents: write` permission for the release job; no additional secret is required.
+Rerunning the workflow updates assets on an existing release for the same tag.
+
+Download the executable for your OS and architecture, then rename it to `agentmesh` or `agentmesh.exe`. On Linux and macOS, make it executable with `chmod +x agentmesh`.
+Create the required TOML configuration using the example above, either at the OS configuration path or at a path selected with `--config`.
