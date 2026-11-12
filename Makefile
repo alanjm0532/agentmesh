@@ -2,6 +2,7 @@ GO ?= go
 APP_NAME := agentmesh
 BIN_DIR := bin
 ARGS ?=
+VERSION ?= latest
 
 .DEFAULT_GOAL := help
 .PHONY: init wire generate fmt lint build build-cli build-server run run-cli all help
@@ -24,7 +25,7 @@ build: build-cli build-server ## Build the CLI and HTTP server
 
 build-cli: ## Build the CLI: bin/agentmesh
 	mkdir -p $(BIN_DIR)
-	$(GO) build -o $(BIN_DIR)/$(APP_NAME) ./cmd/agentmesh
+	$(GO) build -ldflags="-X github.com/alanjm0532/agentmesh/internal/cli/version.Version=$(VERSION)" -o $(BIN_DIR)/$(APP_NAME) ./cmd/agentmesh
 
 build-server: generate ## Generate Wire code and build the HTTP server: bin/agentmesh-server
 	mkdir -p $(BIN_DIR)

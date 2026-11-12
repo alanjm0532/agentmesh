@@ -43,14 +43,11 @@ trap 'exit 1' HUP INT TERM
 
 printf 'Installing AgentMesh %s for %s/%s...\n' "$version" "$os" "$arch"
 fetch "$base_url/$binary" "$stage/$binary"
-fetch "$base_url/agentmesh-SKILL.md" "$stage/agentmesh-SKILL.md"
 fetch "$base_url/SHA256SUMS" "$stage/SHA256SUMS"
-for asset in "$binary" agentmesh-SKILL.md; do
-    expected=$(awk -v name="$asset" '$2 == name {print $1}' "$stage/SHA256SUMS")
-    [ "${#expected}" -eq 64 ] || fail "Missing or invalid checksum for $asset. This release must include installer assets."
-    actual=$(hash_file "$stage/$asset")
-    [ "$expected" = "$actual" ] || fail "Checksum mismatch for $asset."
-done
+expected=$(awk -v name="$binary" '$2 == name {print $1}' "$stage/SHA256SUMS")
+[ "${#expected}" -eq 64 ] || fail "Missing or invalid checksum for $binary."
+actual=$(hash_file "$stage/$binary")
+[ "$expected" = "$actual" ] || fail "Checksum mismatch for $binary."
 
 install_dir=${AGENTMESH_INSTALL_DIR:-$HOME/.local/bin}
 case "$install_dir" in /*) ;; *) fail 'AGENTMESH_INSTALL_DIR must be an absolute path.' ;; esac
@@ -62,10 +59,7 @@ if ! (cp "$stage/$binary" "$binary_tmp" && chmod 755 "$binary_tmp" && mv -f "$bi
     fail "Cannot install the binary in $install_dir."
 fi
 
-skill_dir=$HOME/.agents/skills/agentmesh
-mkdir -p "$skill_dir"
-cp "$stage/agentmesh-SKILL.md" "$skill_dir/SKILL.md"
-printf 'Installed skill: %s/SKILL.md\n' "$skill_dir"
+"$install_dir/agentmesh" skill install --version "$version"
 
 # Persist PATH for new terminals. The parent shell cannot be changed by a script.
 quoted_dir=$(printf '%s' "$install_dir" | sed "s/'/'\\\\''/g")

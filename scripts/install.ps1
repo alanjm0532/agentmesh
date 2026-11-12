@@ -31,26 +31,22 @@ try {
     $baseUrl = "$repo/releases/download/$Version"
     $binary = "agentmesh_windows_$arch.exe"
     Write-Host "Installing AgentMesh $Version for windows/$arch..."
-    foreach ($asset in @($binary, 'agentmesh-SKILL.md', 'SHA256SUMS')) {
+    foreach ($asset in @($binary, 'SHA256SUMS')) {
         Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/$asset" -OutFile (Join-Path $stage $asset)
     }
     $checksums = @{}
     foreach ($line in Get-Content -LiteralPath (Join-Path $stage 'SHA256SUMS')) {
         if ($line -match '^([a-fA-F0-9]{64})\s+\*?(\S+)$') { $checksums[$Matches[2]] = $Matches[1] }
     }
-    foreach ($asset in @($binary, 'agentmesh-SKILL.md')) {
-        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $stage $asset)).Hash
-        if (-not $checksums.ContainsKey($asset) -or $actual -ne $checksums[$asset]) {
-            throw "Missing or mismatched checksum for $asset. This release must include installer assets."
-        }
+    $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $stage $binary)).Hash
+    if (-not $checksums.ContainsKey($binary) -or $actual -ne $checksums[$binary]) {
+        throw "Missing or mismatched checksum for $binary."
     }
 
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $stage $binary) -Destination (Join-Path $InstallDir 'agentmesh.exe') -Force
-    $skillDir = Join-Path $HOME '.agents\skills\agentmesh'
-    New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $stage 'agentmesh-SKILL.md') -Destination (Join-Path $skillDir 'SKILL.md') -Force
-    Write-Host "Installed skill: $skillDir\SKILL.md"
+    & (Join-Path $InstallDir 'agentmesh.exe') skill install --version $Version
+    if ($LASTEXITCODE -ne 0) { throw 'Skill installation failed.' }
 
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
     if (($userPath -split ';') -notcontains $InstallDir) {

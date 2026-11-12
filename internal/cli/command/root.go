@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
 	"github.com/alanjm0532/agentmesh/internal/cli/util"
+	"github.com/alanjm0532/agentmesh/internal/cli/version"
 	"github.com/spf13/cobra"
 )
 
@@ -14,6 +15,7 @@ func newRootCommand(cfg *config.Config) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "agentmesh",
 		Short:         "AgentMesh command-line client",
+		Version:       version.Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {

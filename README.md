@@ -74,10 +74,24 @@ irm https://github.com/alanjm0532/agentmesh/releases/latest/download/install.ps1
 
 The installer detects the OS and architecture, verifies SHA-256 checksums, installs
 the binary for the current user, and installs the matching skill at
-`~/.agents/skills/agentmesh/SKILL.md`. Open a new terminal and a new agent session after
+`~/.agents/skills/agentmesh/`, including `SKILL.md` and `references/`.
+Open a new terminal and a new agent session after
 installation; use the full binary path printed by the installer in an existing
-session. See [Installation](docs/installation.md) for paths, customization,
-upgrades, and a ready-to-copy AI installation prompt.
+session. See [Installation](docs/installation.md) for installation and verification.
+
+If the CLI is already installed, install or update its skill with:
+
+```bash
+agentmesh skill install
+agentmesh skill install --version v0.1.0
+agentmesh skill install --version latest
+agentmesh --version
+```
+
+The default skill version matches the CLI release tag. Download failures return
+an error without selecting another version.
+Local builds default to `latest`. Skill installation works
+without server configuration.
 
 ### Run from source
 
@@ -203,6 +217,7 @@ Gin request and recovery logs use `gin-contrib/zap`. The cleanup function return
 
 ```bash
 make build-cli    # Build the CLI: bin/agentmesh
+make build-cli VERSION=v0.1.0 # Embed a CLI release version
 make build-server # Generate Wire code and build the server: bin/agentmesh-server
 make build        # Build the CLI and HTTP server
 make run          # Generate Wire code and start the HTTP server
@@ -238,10 +253,16 @@ Pushing any Git tag triggers `.github/workflows/release-cli.yml`. The workflow b
 | Windows | `agentmesh_windows_amd64.exe`, `agentmesh_windows_arm64.exe` |
 
 Each asset is a single executable. OS and architecture suffixes give every asset a unique name within the release, with `darwin` identifying macOS.
-The workflow also publishes `install.sh`, `install.ps1`, `agentmesh-SKILL.md`, and
-`SHA256SUMS`. The checksum manifest covers the six executables, installers, and
-skill. Both installers resolve the latest published release once and download
-the CLI, skill, and manifest from that tag.
+The workflow also publishes `install.sh`, `install.ps1`, `agentmesh-skill.zip`,
+and `SHA256SUMS`: ten release assets in total. The ZIP contains `SKILL.md` and
+`references/` at its root. The checksum manifest covers the six executables,
+installers, and skill archive. Release builds embed their Git tag as the CLI
+version, available through `agentmesh --version`.
+
+Both installers download and verify the CLI, then invoke
+`agentmesh skill install --version <tag>`. The command verifies and extracts the
+skill archive to `~/.agents/skills/agentmesh/`. Download, checksum, or extraction
+failures stop installation and preserve the existing skill.
 
 To trigger a release after the workflow has been committed and pushed:
 

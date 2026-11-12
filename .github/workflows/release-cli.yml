@@ -37,6 +37,7 @@ jobs:
           CGO_ENABLED: '0'
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          CLI_VERSION: ${{ github.ref_name }}
         run: |
           binary_name="agentmesh_${GOOS}_${GOARCH}"
           if [[ "$GOOS" == "windows" ]]; then
@@ -44,7 +45,8 @@ jobs:
           fi
 
           mkdir -p dist
-          go build -mod=readonly -trimpath -ldflags="-s -w" \
+          go build -mod=readonly -trimpath \
+            -ldflags="-s -w -X github.com/alanjm0532/agentmesh/internal/cli/version.Version=${CLI_VERSION}" \
             -o "dist/${binary_name}" ./cmd/agentmesh
 
       - name: Upload CLI binary
@@ -90,9 +92,9 @@ jobs:
         run: |
           sh -n scripts/install.sh
           cp scripts/install.sh scripts/install.ps1 dist/
-          cp skills/agentmesh/SKILL.md dist/agentmesh-SKILL.md
+          (cd skills/agentmesh && zip -r ../../dist/agentmesh-skill.zip SKILL.md references)
           cd dist
-          sha256sum agentmesh_* agentmesh-SKILL.md install.sh install.ps1 > SHA256SUMS
+          sha256sum agentmesh_* agentmesh-skill.zip install.sh install.ps1 > SHA256SUMS
 
       - name: Publish release assets
         working-directory: dist
