@@ -1,195 +1,172 @@
 # agentmesh
+
 An open network that connects AI coding agents across platforms, enabling them to discover, communicate, and collaborate with each other through a unified protocol.
 
-## Gin + MCP Server 最小示例
+## 项目结构
 
-要求 Go 1.27.4 或以上，使用 Gin、官方 MCP Go SDK、Wire 依赖注入和 Viper TOML 配置。
-启动入口为 `cmd/server/main.go`：
-
-- `GET /ping`：普通 HTTP 接口，返回 `{"message":"pong"}`。
-- `GET /hello?name=Alan`：调用业务层，返回 `{"message":"Hello, Alan!"}`。
-- `/mcp`：MCP Streamable HTTP 接口，注册了 `hello` 工具，传入 `name` 返回问候语。
-
-### 目录结构
+项目使用根目录的单个 Go module，要求 Go 1.27.4 或以上。
 
 ```text
 agentmesh/
 ├── cmd/
-│   └── server/
-│       ├── main.go          # 调用 Wire 初始化并启动服务
-│       ├── server.go        # 服务实例与启动方法
-│       ├── logger.go        # Zap 构造函数与日志清理
-│       ├── wire.go          # Wire 注入声明（wireinject）
-│       └── wire_gen.go      # Wire 自动生成的组装代码
+│   ├── server/
+│   │   └── main.go             # HTTP 服务入口
+│   └── agentmesh/
+│       └── main.go             # CLI 入口
 ├── internal/
-│   ├── handler/
-│   │   ├── http.go          # Gin 路由与 HTTP 接口
-│   │   ├── mcp.go           # MCP Server 与工具注册
-│   │   └── provider.go      # handler.ProviderSet
-│   ├── service/
-│   │   ├── hello.go         # HTTP 和 MCP 共用的业务逻辑
-│   │   └── provider.go      # service.ProviderSet
-│   ├── repository/
-│   │   └── doc.go           # 预留数据访问层
-│   ├── model/
-│   │   └── hello.go         # 输入、输出模型
-│   └── middleware/
-│       └── request_id.go    # 请求标识中间件
-├── pkg/                    # 预留可复用的公共包
-├── configs/
-│   ├── config.go           # Viper 配置加载与结构体
-│   └── config.toml         # TOML 配置文件
-├── Makefile                # 生成、检查、构建和启动命令
+│   ├── server/
+│   │   ├── server.go           # 服务初始化与启动
+│   │   ├── logger.go           # Zap 日志初始化
+│   │   ├── wire.go             # Wire 依赖注入声明
+│   │   ├── config/             # 服务端 Viper 配置加载
+│   │   ├── handler/            # Gin 路由与 HTTP 接口
+│   │   ├── service/            # 业务逻辑
+│   │   ├── repository/         # 数据访问层
+│   │   └── middleware/         # 请求标识中间件
+│   └── cli/
+│       ├── command/            # Cobra 命令和 Bubble Tea 交互
+│       ├── client/             # net/http 请求和 encoding/json 解析
+│       └── config/             # CLI Viper 配置加载
+├── pkg/
+│   └── protocol/               # AgentMesh Protocol，两端共用
+│       ├── ping.go             # PingResponse
+│       └── hello.go            # HelloRequest、HelloResponse
+├── migrations/                 # 数据库迁移预留目录
+├── docs/                       # 文档预留目录
+├── deployments/
+│   ├── server.toml             # 服务端默认配置
+│   └── cli.toml                # CLI 默认配置
 ├── go.mod
-└── go.sum
+├── go.sum
+├── Makefile
+└── README.md
 ```
 
-HTTP 和 MCP 接口都调用 `HelloService.Hello`；业务层不依赖 Gin 或 MCP。
-当前示例不涉及数据存储，`repository` 和 `pkg` 作为扩展目录保留。
+`pkg/protocol` 只定义公共请求、响应结构体和 JSON 字段，不依赖 Gin 或 CLI 库。
+Server 和 CLI 都直接引用 `github.com/alanjm0532/agentmesh/pkg/protocol`。
 
-### 启动
+| 功能 | Go 库 |
+| --- | --- |
+| HTTP 服务 | Gin |
+| CLI 命令 | Cobra |
+| 命令行交互 | Bubble Tea |
+| 配置管理 | Viper |
+| HTTP 请求 | `net/http` |
+| JSON | `encoding/json` |
+
+## 快速开始
+
+在项目根目录启动 HTTP 服务：
 
 ```bash
 make init
 make run
 ```
 
-`wire_gen.go` 和 `bin/` 构建产物已加入 `.gitignore`。
-`make build`、`make run` 和 `make lint` 会自动先生成 Wire 代码。
-直接使用 `go run ./cmd/server` 前，请先执行 `make wire`。
+服务默认监听 `127.0.0.1:8080`。另开终端运行 CLI：
 
-服务监听 `127.0.0.1:8080`。另开终端调用：
+```bash
+go run ./cmd/agentmesh ping
+# 或使用 Makefile
+make run-cli ARGS="ping"
+```
+
+成功时输出 `pong`，退出码为 0。连接失败、超时、HTTP 状态异常或响应不符合预期时，
+错误写入标准错误，退出码为 1。
+
+在交互终端中，Bubble Tea 显示请求状态，按 `q`、`Esc` 或 `Ctrl+C` 取消请求。
+输入或输出被重定向时自动跳过交互界面。最终结果始终写入 stdout，交互状态写入 stderr。
+
+## CLI 配置与参数
+
+```bash
+go run ./cmd/agentmesh --help
+go run ./cmd/agentmesh ping --help
+go run ./cmd/agentmesh ping --server http://127.0.0.1:8081 --timeout 3s
+go run ./cmd/agentmesh --config /path/to/cli.toml ping
+```
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `--config` | 可选 | 指定 CLI TOML 配置文件路径 |
+| `--server` | `http://127.0.0.1:8080` | HTTP 服务地址，包含 `http://` 或 `https://` |
+| `--timeout` | `5s` | 请求超时时间，必须大于 0 |
+
+Viper 默认读取项目根目录下的 `deployments/cli.toml`：
+
+```toml
+server = "http://127.0.0.1:8080"
+timeout = "5s"
+```
+
+默认配置文件可省略；使用 `--config` 显式指定的文件必须能够读取。
+配置优先级为：命令行参数 > 环境变量 > TOML 配置 > 默认值。
+支持 `AGENTMESH_SERVER` 和 `AGENTMESH_TIMEOUT` 环境变量：
+
+```bash
+AGENTMESH_SERVER=http://127.0.0.1:8081 AGENTMESH_TIMEOUT=3s go run ./cmd/agentmesh ping
+```
+
+CLI 的构建和运行不依赖服务端配置或 Wire 生成。
+
+## HTTP 接口与服务端配置
+
+服务保留以下接口：
+
+- `GET /ping`：返回 `{"message":"pong"}`，CLI 的 `ping` 命令调用此接口。
+- `GET /hello?name=Alan`：返回 `{"message":"Hello, Alan!"}`。
 
 ```bash
 curl http://127.0.0.1:8080/ping
 curl 'http://127.0.0.1:8080/hello?name=Alan'
 ```
 
-### TOML 配置
-
-默认从当前工作目录读取 `configs/config.toml`：
+服务端默认从当前工作目录读取 `deployments/server.toml`：
 
 ```toml
 [server]
 addr = "127.0.0.1:8080"
-mode = "release"
+mode = "debug"
 ```
 
-在项目根目录启动服务，或通过 `-config` 参数指定配置路径：
+`server.mode` 支持 `debug`、`release` 和 `test`，配置由 `Config.Validate()` 校验。
+修改监听地址后，通过 CLI 的 `--server` 参数或配置指定相应地址。
+
+通过 `-config` 指定服务端配置文件：
 
 ```bash
-make wire
-go run ./cmd/server -config /path/to/config.toml
-# 编译后运行同样支持指定路径
-./bin/agentmesh -config /path/to/config.toml
+make run ARGS="-config /path/to/server.toml"
+# 构建后的服务端
+./bin/agentmesh-server -config /path/to/server.toml
 ```
 
-修改 TOML 中的 `server.addr` 即可调整监听地址，例如：
+服务端日志使用 Zap，默认级别为 `info`，输出到 stdout。
+`release` 模式使用 JSON 编码，`debug` 和 `test` 模式使用 console 编码。
+Gin 请求和异常恢复日志使用 `gin-contrib/zap`，Wire 返回的清理函数负责刷新日志。
 
-```toml
-[server]
-addr = "127.0.0.1:8081"
-mode = "release"
-```
-
-修改端口后，客户端的 MCP URL 也需使用相应端口。
-`server.addr` 和 `server.mode` 都必须在 TOML 中显式配置；配置文件缺失、格式错误或必填项缺失时，启动会报错退出。
-`server.mode` 可选 `debug`、`release`、`test`。
-本地调试时可以设置为 `debug`；`release` 会关闭 Gin 的调试提示，请求访问日志仍然保留。
-配置通过 `Config.Validate()` 统一校验，规则写在字段的 `validate` 标签中；
-`notblank` 校验非空白地址，`oneof` 限定运行模式。
-
-### 日志
-
-使用 Zap，默认级别为 `info`，日志输出到标准输出（stdout）。
-`server.mode = "release"` 时使用 Zap 原生 JSON 编码；`debug` 和 `test` 时使用原生 console 编码，时间戳可读，结构化字段按 Zap 默认格式显示。
-Wire 调用 `configs.Load` 读取配置，再调用 `newLogger` 按模式创建日志实例，并注入业务层、Gin 路由和服务实例。
-`HelloService.Hello` 记录传入的 `name`；Gin 请求和异常恢复日志使用 `gin-contrib/zap`。
-初始化失败时向标准错误打印错误并返回非零退出码；Wire 生成清理函数，程序返回时通过 `cleanup()` 调用 `Sync()` 刷新日志。
-
-`release` 模式的业务日志示例（省略时间、调用位置等字段）：
-
-```json
-{"level":"info","logger":"hello","msg":"HelloService.Hello","name":"Alan"}
-```
-
-`debug` / `test` 模式示例：
-
-```text
-2026-11-11T22:00:00.000+0800  INFO  hello  service/hello.go:20  HelloService.Hello  {"name": "Alan"}
-```
-
-### Wire 与构建命令
-
-参考 `roomplay` 的组织方式，各层通过 `provider.go` 导出 `ProviderSet`，
-在 `cmd/server/wire.go` 中由 `wireServer()` 汇总，生成实际的构造函数调用。
-`wireServer(configPath)` 统一组装依赖：`configs.Load → newLogger` 读取并校验配置、创建日志实例；
-`NewHelloService → NewHandler → NewRouter` 依次组装依赖，
-最后由 `newServer` 接收配置和路由，构造服务实例。
-初始化函数返回服务、清理函数和错误，调用方使用 `defer cleanup()` 释放日志资源。
+## 构建与开发命令
 
 ```bash
-make wire       # 修改构造函数或 ProviderSet 后重新生成 wire_gen.go
-make generate   # 生成项目代码（当前为 Wire）
-make fmt        # 格式化代码
-make lint       # go vet 检查
-make build      # 构建 bin/agentmesh
-make all        # 生成代码并构建
-make help       # 查看所有命令
+make build-cli    # 构建 CLI：bin/agentmesh
+make build-server # 生成 Wire 代码并构建 HTTP 服务：bin/agentmesh-server
+make build        # 构建 CLI 和 HTTP 服务
+make run          # 生成 Wire 代码并启动 HTTP 服务
+make run-cli ARGS="ping --timeout 3s"
+make wire         # 生成服务端 wire_gen.go
+make generate     # 生成项目代码（当前为 Wire）
+make fmt          # 格式化代码
+make lint         # 生成 Wire 代码后执行 go vet
+make help         # 查看所有命令
 ```
 
-`make build` 默认使用 `sonic avx` 构建标签，启用 Gin 的 Sonic JSON 实现，实际命令为：
+构建后使用 CLI：
 
 ```bash
-go build -tags="sonic avx" -o bin/agentmesh ./cmd/server
+./bin/agentmesh ping
+./bin/agentmesh ping --server http://127.0.0.1:8081 --timeout 3s
 ```
 
-Wire v0.7.0 通过 `go.mod` 的 `tool` 声明管理，`make wire` 使用 `go tool wire`，
-无需全局安装。请修改 `wire.go` 和各层 `provider.go`，通过命令生成 `wire_gen.go`，不要手动编辑生成文件。
-
-### 调用 MCP
-
-使用无状态模式并返回 JSON，方便通过 curl 演示，无需保存会话 ID。
-以下命令按顺序执行。
-
-1. 初始化 MCP 连接：
-
-```bash
-curl http://127.0.0.1:8080/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl-demo","version":"1.0.0"}}}'
-```
-
-2. 发送初始化完成通知（返回 HTTP 202，无响应正文）：
-
-```bash
-curl -i http://127.0.0.1:8080/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -H 'MCP-Protocol-Version: 2025-11-25' \
-  -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-```
-
-3. 查看工具列表：
-
-```bash
-curl http://127.0.0.1:8080/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -H 'MCP-Protocol-Version: 2025-11-25' \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-```
-
-4. 调用 `hello`：
-
-```bash
-curl http://127.0.0.1:8080/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -H 'MCP-Protocol-Version: 2025-11-25' \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"hello","arguments":{"name":"Alan"}}}'
-```
-
-响应的 `result.structuredContent` 为 `{"message":"Hello, Alan!"}`。
-支持 Streamable HTTP 的 MCP 客户端可以直接连接 `http://127.0.0.1:8080/mcp`。
+Wire 通过 `go.mod` 的 `tool` 声明管理，无需全局安装。
+修改服务端依赖后，执行 `make wire` 生成 `internal/server/wire_gen.go`。
+直接运行 `go run ./cmd/server` 前也需要先生成 Wire 代码。
+`wire_gen.go` 和 `bin/` 构建产物已加入 `.gitignore`，不要手动编辑生成文件。

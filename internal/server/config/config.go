@@ -1,5 +1,5 @@
-// Package configs 管理服务配置。
-package configs
+// Package config 管理服务配置。
+package config
 
 import (
 	"fmt"
@@ -18,8 +18,8 @@ type ServerConfig struct {
 	Mode string `mapstructure:"mode" validate:"oneof=debug release test"`
 }
 
-// Validate 根据结构体标签统一校验配置。
 func (c Config) Validate() error {
+	// 根据结构体标签统一校验配置。
 	check := validator.New()
 	if err := check.RegisterValidation("notblank", validators.NotBlank); err != nil {
 		return err
@@ -27,8 +27,8 @@ func (c Config) Validate() error {
 	return check.Struct(c)
 }
 
-// Load 从指定 TOML 文件读取配置。
 func Load(path string) (Config, error) {
+	// 从指定 TOML 文件读取配置。
 	v := viper.New()
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")

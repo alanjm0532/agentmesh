@@ -4,7 +4,7 @@
 # Binaries for programs and plugins
 bin/
 /agentmesh
-/server
+/agentmesh-server
 *.exe
 *.exe~
 *.dll

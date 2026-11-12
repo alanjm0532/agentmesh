@@ -1,15 +1,15 @@
-package main
+package server
 
 import (
 	"fmt"
 
-	"github.com/alanjm0532/agentmesh/configs"
+	"github.com/alanjm0532/agentmesh/internal/server/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-// newLogger 按运行模式创建 logger，并提供给 Wire 调用的清理函数。
-func newLogger(config configs.Config) (*zap.Logger, func(), error) {
+func newLogger(config config.Config) (*zap.Logger, func(), error) {
+	// 按运行模式创建日志实例，并提供给 Wire 调用的清理函数。
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{"stdout"}
 	if config.Server.Mode != "release" {

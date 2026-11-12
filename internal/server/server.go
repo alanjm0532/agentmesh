@@ -1,21 +1,21 @@
-package main
+package server
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/alanjm0532/agentmesh/configs"
+	"github.com/alanjm0532/agentmesh/internal/server/config"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	config configs.Config
+	config config.Config
 	router *gin.Engine
 	logger *zap.Logger
 }
 
-func newServer(config configs.Config, router *gin.Engine, logger *zap.Logger) *Server {
+func newServer(config config.Config, router *gin.Engine, logger *zap.Logger) *Server {
 	return &Server{config: config, router: router, logger: logger}
 }
 
@@ -24,8 +24,8 @@ func (s *Server) Run() error {
 	return s.router.Run(s.config.Server.Addr)
 }
 
-// run 启动 Wire 组装的服务，并在返回前清理依赖。
-func run(configPath string) int {
+func Run(configPath string) int {
+	// 启动 Wire 组装的服务，并在返回前清理依赖。
 	server, cleanup, err := wireServer(configPath)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "初始化服务失败:", err)
