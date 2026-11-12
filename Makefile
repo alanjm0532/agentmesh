@@ -6,38 +6,38 @@ ARGS ?=
 .DEFAULT_GOAL := help
 .PHONY: init wire generate fmt lint build build-cli build-server run run-cli all help
 
-init: ## 下载项目和代码生成工具依赖
+init: ## Download project and code generation tool dependencies
 	$(GO) mod download
 
-wire: ## 生成 Wire 依赖注入代码
+wire: ## Generate Wire dependency injection code
 	$(GO) tool wire ./internal/server
 
-generate: wire ## 生成项目代码（当前为 Wire）
+generate: wire ## Generate project code (Wire)
 
-fmt: ## 格式化 Go 代码
+fmt: ## Format Go code
 	$(GO) fmt ./...
 
-lint: generate ## 使用 go vet 检查代码
+lint: generate ## Check code with go vet
 	$(GO) vet ./...
 
-build: build-cli build-server ## 构建 CLI 和 HTTP 服务
+build: build-cli build-server ## Build the CLI and HTTP server
 
-build-cli: ## 构建 CLI：bin/agentmesh
+build-cli: ## Build the CLI: bin/agentmesh
 	mkdir -p $(BIN_DIR)
 	$(GO) build -o $(BIN_DIR)/$(APP_NAME) ./cmd/agentmesh
 
-build-server: generate ## 生成 Wire 代码并构建 HTTP 服务：bin/agentmesh-server
+build-server: generate ## Generate Wire code and build the HTTP server: bin/agentmesh-server
 	mkdir -p $(BIN_DIR)
 	$(GO) build -o $(BIN_DIR)/$(APP_NAME)-server ./cmd/server
 
-run: generate ## 生成 Wire 代码并启动服务
+run: generate ## Generate Wire code and start the HTTP server
 	$(GO) run ./cmd/server $(ARGS)
 
-run-cli: ## 运行 CLI，例如 make run-cli ARGS="ping"
+run-cli: ## Run the CLI, e.g. make run-cli ARGS="ping"
 	$(GO) run ./cmd/agentmesh $(ARGS)
 
-all: build ## 生成代码并构建
+all: build ## Generate code and build
 
-help: ## 显示可用命令
+help: ## Show available commands
 	@printf 'Usage: make [target]\n\n'
 	@awk 'BEGIN { FS = ":.*## " } /^[a-zA-Z_-]+:.*## / { printf "  %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)

@@ -26,7 +26,7 @@ func (c *Client) Ping(ctx context.Context) (protocol.PingResponse, error) {
 		return protocol.PingResponse{}, err
 	}
 	if response.Message != "pong" {
-		return protocol.PingResponse{}, fmt.Errorf("ping 响应异常: message = %q", response.Message)
+		return protocol.PingResponse{}, fmt.Errorf("unexpected ping response: message = %q", response.Message)
 	}
 	return response, nil
 }

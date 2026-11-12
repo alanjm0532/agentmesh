@@ -9,7 +9,7 @@ import (
 )
 
 func newLogger(config config.Config) (*zap.Logger, func(), error) {
-	// 按运行模式创建日志实例，并提供给 Wire 调用的清理函数。
+	// Configure logging for the server mode and provide a cleanup function to Wire.
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{"stdout"}
 	if config.Server.Mode != "release" {
@@ -19,7 +19,7 @@ func newLogger(config config.Config) (*zap.Logger, func(), error) {
 	}
 	logger, err := logConfig.Build()
 	if err != nil {
-		return nil, nil, fmt.Errorf("初始化日志失败: %w", err)
+		return nil, nil, fmt.Errorf("initialize logger: %w", err)
 	}
 	return logger, func() { _ = logger.Sync() }, nil
 }

@@ -2,122 +2,122 @@
 
 An open network that connects AI coding agents across platforms, enabling them to discover, communicate, and collaborate with each other through a unified protocol.
 
-## 项目结构
+## Project Structure
 
-项目使用根目录的单个 Go module，要求 Go 1.27.4 或以上。
+The project uses a single Go module at the repository root and requires Go 1.27.4 or later.
 
 ```text
 agentmesh/
 ├── cmd/
 │   ├── server/
-│   │   └── main.go             # HTTP 服务入口
+│   │   └── main.go             # HTTP server entry point
 │   └── agentmesh/
-│       └── main.go             # CLI 入口
+│       └── main.go             # CLI entry point
 ├── internal/
 │   ├── server/
-│   │   ├── server.go           # 服务初始化与启动
-│   │   ├── logger.go           # Zap 日志初始化
-│   │   ├── wire.go             # Wire 依赖注入声明
-│   │   ├── config/             # 服务端 Viper 配置加载
-│   │   ├── handler/            # Gin 路由与 HTTP 接口
-│   │   ├── service/            # 业务逻辑
-│   │   ├── repository/         # 数据访问层
-│   │   └── middleware/         # 请求标识中间件
+│   │   ├── server.go           # Server initialization and startup
+│   │   ├── logger.go           # Zap logger initialization
+│   │   ├── wire.go             # Wire dependency injection declarations
+│   │   ├── config/             # Server configuration loading with Viper
+│   │   ├── handler/            # Gin routes and HTTP handlers
+│   │   ├── service/            # Business logic
+│   │   ├── repository/         # Data access layer
+│   │   └── middleware/         # Request ID middleware
 │   └── cli/
-│       ├── command/            # Cobra 命令
-│       ├── client/             # Resty HTTP 请求和 encoding/json 解析
-│       └── config/             # CLI Viper 配置加载
+│       ├── command/            # Cobra commands
+│       ├── client/             # Resty HTTP requests and encoding/json decoding
+│       └── config/             # CLI configuration loading with Viper
 ├── pkg/
-│   └── protocol/               # AgentMesh Protocol，两端共用
+│   └── protocol/               # AgentMesh Protocol shared by server and CLI
 │       ├── ping.go             # PingResponse
-│       └── hello.go            # HelloRequest、HelloResponse
-├── migrations/                 # 数据库迁移预留目录
-├── docs/                       # 文档预留目录
+│       └── hello.go            # HelloRequest, HelloResponse
+├── migrations/                 # Reserved for database migrations
+├── docs/                       # Reserved for documentation
 ├── deployments/
-│   ├── server.toml             # 服务端默认配置
-│   └── cli.toml                # CLI 默认配置
+│   ├── server.toml             # Default server configuration
+│   └── cli.toml                # Default CLI configuration
 ├── go.mod
 ├── go.sum
 ├── Makefile
 └── README.md
 ```
 
-`pkg/protocol` 只定义公共请求、响应结构体和 JSON 字段，不依赖 Gin 或 CLI 库。
-Server 和 CLI 都直接引用 `github.com/alanjm0532/agentmesh/pkg/protocol`。
+`pkg/protocol` defines shared request and response types, route constants, and JSON fields without depending on Gin or CLI libraries.
+Both the server and CLI import `github.com/alanjm0532/agentmesh/pkg/protocol`.
 
-| 功能 | Go 库 |
+| Feature | Go Library |
 | --- | --- |
-| HTTP 服务 | Gin |
-| CLI 命令 | Cobra |
-| 配置管理 | Viper |
-| HTTP 请求 | `github.com/go-resty/resty/v2` |
+| HTTP server | Gin |
+| CLI commands | Cobra |
+| Configuration | Viper |
+| HTTP requests | `github.com/go-resty/resty/v2` |
 | JSON | `encoding/json` |
 
-## 快速开始
+Use English throughout the project, including documentation, source comments, CLI help, output, errors, and logs. Do not add i18n or language-switching features. See [agent.md](agent.md) for project conventions.
 
-在项目根目录启动 HTTP 服务：
+## Quick Start
+
+Start the HTTP server from the repository root:
 
 ```bash
 make init
 make run
 ```
 
-服务默认监听 `127.0.0.1:8080`。另开终端运行 CLI：
+The server listens on `127.0.0.1:8080` by default. Run the CLI in another terminal:
 
 ```bash
 go run ./cmd/agentmesh ping
-# 或使用 Makefile
+# Or use the Makefile
 make run-cli ARGS="ping"
 ```
 
-成功时输出 `pong`，退出码为 0。连接失败、超时、HTTP 状态异常或响应不符合预期时，
-错误写入标准错误，退出码为 1。
+On success, the CLI prints `pong` and exits with code 0. Connection failures, timeouts, unexpected HTTP status codes, and invalid responses produce an error on stderr and exit with code 1.
 
-## CLI 配置与参数
+## CLI Configuration and Flags
 
 ```bash
 go run ./cmd/agentmesh --help
 go run ./cmd/agentmesh ping --help
-go run ./cmd/agentmesh ping --server http://127.0.0.1:8081 --timeout 3s
 go run ./cmd/agentmesh --config /path/to/cli.toml ping
 ```
 
-| 参数 | 默认值 | 说明 |
+| Flag | Default | Description |
 | --- | --- | --- |
-| `--config` | 可选 | 指定 CLI TOML 配置文件路径 |
-| `--server` | `http://127.0.0.1:8080` | HTTP 服务地址，包含 `http://` 或 `https://` |
-| `--timeout` | `5s` | 请求超时时间，必须大于 0 |
+| `--config` | `deployments/cli.toml` | Path to the required CLI TOML configuration file |
 
-Viper 默认读取项目根目录下的 `deployments/cli.toml`：
+Viper reads `deployments/cli.toml` relative to the working directory by default:
 
 ```toml
 server = "http://127.0.0.1:8080"
 timeout = "5s"
 ```
 
-默认配置文件可省略；使用 `--config` 显式指定的文件必须能够读取。
-配置优先级为：命令行参数 > 环境变量 > TOML 配置 > 默认值。
-支持 `AGENTMESH_SERVER` 和 `AGENTMESH_TIMEOUT` 环境变量：
+The configuration file must exist and be readable. Both settings are required:
 
-```bash
-AGENTMESH_SERVER=http://127.0.0.1:8081 AGENTMESH_TIMEOUT=3s go run ./cmd/agentmesh ping
-```
+| Setting | Validation |
+| --- | --- |
+| `server` | A valid HTTP or HTTPS URL |
+| `timeout` | A valid Go duration string greater than zero, such as `5s` |
 
-CLI 的构建和运行不依赖服务端配置或 Wire 生成。
+Runtime settings come exclusively from the TOML file. There are no fallback values, environment variable overrides, or `--server` and `--timeout` flags.
+Missing files, missing settings, invalid URLs, malformed durations, and nonpositive timeouts produce an error before any HTTP request is sent.
 
-## HTTP 接口与服务端配置
+Building and running the CLI does not require server configuration or Wire generation.
 
-服务保留以下接口：
+## HTTP Endpoints and Server Configuration
 
-- `GET /ping`：返回 `{"message":"pong"}`，CLI 的 `ping` 命令调用此接口。
-- `GET /hello?name=Alan`：返回 `{"message":"Hello, Alan!"}`。
+The server provides these endpoints:
+
+- `GET /ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
+- `GET /hello?name=Alan`: returns `{"message":"Hello, Alan!"}`.
 
 ```bash
 curl http://127.0.0.1:8080/ping
 curl 'http://127.0.0.1:8080/hello?name=Alan'
 ```
 
-服务端默认从当前工作目录读取 `deployments/server.toml`：
+The server reads `deployments/server.toml` relative to the working directory by default:
 
 ```toml
 [server]
@@ -125,44 +125,44 @@ addr = "127.0.0.1:8080"
 mode = "debug"
 ```
 
-`server.mode` 支持 `debug`、`release` 和 `test`，配置由 `Config.Validate()` 校验。
-修改监听地址后，通过 CLI 的 `--server` 参数或配置指定相应地址。
+`server.mode` supports `debug`, `release`, and `test`. Configuration is validated by `Config.Validate()`.
+After changing the listening address, update `server` in the CLI configuration accordingly.
 
-通过 `-config` 指定服务端配置文件：
+Use `-config` to specify a server configuration file:
 
 ```bash
 make run ARGS="-config /path/to/server.toml"
-# 构建后的服务端
+# Using the compiled server binary
 ./bin/agentmesh-server -config /path/to/server.toml
 ```
 
-服务端日志使用 Zap，默认级别为 `info`，输出到 stdout。
-`release` 模式使用 JSON 编码，`debug` 和 `test` 模式使用 console 编码。
-Gin 请求和异常恢复日志使用 `gin-contrib/zap`，Wire 返回的清理函数负责刷新日志。
+The server uses Zap at the `info` level by default and writes logs to stdout.
+The `release` mode uses JSON encoding; `debug` and `test` use console encoding.
+Gin request and recovery logs use `gin-contrib/zap`. The cleanup function returned by Wire flushes the logger.
 
-## 构建与开发命令
+## Build and Development Commands
 
 ```bash
-make build-cli    # 构建 CLI：bin/agentmesh
-make build-server # 生成 Wire 代码并构建 HTTP 服务：bin/agentmesh-server
-make build        # 构建 CLI 和 HTTP 服务
-make run          # 生成 Wire 代码并启动 HTTP 服务
-make run-cli ARGS="ping --timeout 3s"
-make wire         # 生成服务端 wire_gen.go
-make generate     # 生成项目代码（当前为 Wire）
-make fmt          # 格式化代码
-make lint         # 生成 Wire 代码后执行 go vet
-make help         # 查看所有命令
+make build-cli    # Build the CLI: bin/agentmesh
+make build-server # Generate Wire code and build the server: bin/agentmesh-server
+make build        # Build the CLI and HTTP server
+make run          # Generate Wire code and start the HTTP server
+make run-cli ARGS="--config /path/to/cli.toml ping"
+make wire         # Generate the server's wire_gen.go
+make generate     # Generate project code (Wire)
+make fmt          # Format Go code
+make lint         # Generate Wire code and run go vet
+make help         # Show available commands
 ```
 
-构建后使用 CLI：
+Use the compiled CLI:
 
 ```bash
 ./bin/agentmesh ping
-./bin/agentmesh ping --server http://127.0.0.1:8081 --timeout 3s
+./bin/agentmesh --config /path/to/cli.toml ping
 ```
 
-Wire 通过 `go.mod` 的 `tool` 声明管理，无需全局安装。
-修改服务端依赖后，执行 `make wire` 生成 `internal/server/wire_gen.go`。
-直接运行 `go run ./cmd/server` 前也需要先生成 Wire 代码。
-`wire_gen.go` 和 `bin/` 构建产物已加入 `.gitignore`，不要手动编辑生成文件。
+Wire is managed through the `tool` directive in `go.mod`; no global installation is required.
+After changing server dependencies, run `make wire` to generate `internal/server/wire_gen.go`.
+Generate Wire code before running `go run ./cmd/server` directly as well.
+`wire_gen.go` and `bin/` build artifacts are ignored by Git. Do not edit generated files manually.

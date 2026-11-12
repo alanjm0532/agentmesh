@@ -8,7 +8,7 @@ import (
 
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 为每次请求生成标识，并通过响应头返回给调用方。
+		// Generate a request ID and return it in the response header.
 		c.Header("X-Request-ID", rand.Text())
 		c.Next()
 	}

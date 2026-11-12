@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	configPath := flag.String("config", "deployments/server.toml", "TOML 配置文件路径")
+	configPath := flag.String("config", "deployments/server.toml", "TOML configuration file path")
 	flag.Parse()
 
 	os.Exit(server.Run(*configPath))

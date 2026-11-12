@@ -1,32 +1,36 @@
 package config
 
 import (
-	"errors"
 	"fmt"
+	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 )
 
-func New() *viper.Viper {
-	cfg := viper.New()
-	cfg.SetEnvPrefix("AGENTMESH")
-	cfg.AutomaticEnv()
-	cfg.SetConfigName("cli")
-	cfg.SetConfigType("toml")
-	cfg.AddConfigPath("deployments")
-	return cfg
+type Config struct {
+	Server  string        `mapstructure:"server" validate:"required,http_url"`
+	Timeout time.Duration `mapstructure:"timeout" validate:"required,gt=0"`
 }
 
-func Load(cfg *viper.Viper, path string, explicit bool) error {
-	if explicit {
-		cfg.SetConfigFile(path)
+func (c Config) Validate() error {
+	return validator.New().Struct(c)
+}
+
+func Load(path string) (Config, error) {
+	v := viper.New()
+	v.SetConfigFile(path)
+	v.SetConfigType("toml")
+	if err := v.ReadInConfig(); err != nil {
+		return Config{}, fmt.Errorf("read CLI configuration file %q: %w", path, err)
 	}
-	if err := cfg.ReadInConfig(); err != nil {
-		// 默认配置文件可省略；显式指定的文件必须能够读取。
-		var notFound viper.ConfigFileNotFoundError
-		if explicit || !errors.As(err, &notFound) {
-			return fmt.Errorf("读取 CLI 配置失败: %w", err)
-		}
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return Config{}, fmt.Errorf("decode CLI configuration file %q: %w", path, err)
 	}
-	return nil
+	if err := cfg.Validate(); err != nil {
+		return Config{}, fmt.Errorf("validate CLI configuration file %q: %w", path, err)
+	}
+	return cfg, nil
 }

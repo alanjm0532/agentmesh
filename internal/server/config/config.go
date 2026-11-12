@@ -1,4 +1,4 @@
-// Package config 管理服务配置。
+// Package config loads and validates server configuration.
 package config
 
 import (
@@ -19,7 +19,7 @@ type ServerConfig struct {
 }
 
 func (c Config) Validate() error {
-	// 根据结构体标签统一校验配置。
+	// Validate configuration using struct tags.
 	check := validator.New()
 	if err := check.RegisterValidation("notblank", validators.NotBlank); err != nil {
 		return err
@@ -28,20 +28,20 @@ func (c Config) Validate() error {
 }
 
 func Load(path string) (Config, error) {
-	// 从指定 TOML 文件读取配置。
+	// Read configuration from the specified TOML file.
 	v := viper.New()
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")
 	if err := v.ReadInConfig(); err != nil {
-		return Config{}, fmt.Errorf("读取配置文件 %q: %w", path, err)
+		return Config{}, fmt.Errorf("read configuration file %q: %w", path, err)
 	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return Config{}, fmt.Errorf("解析配置文件 %q: %w", path, err)
+		return Config{}, fmt.Errorf("decode configuration file %q: %w", path, err)
 	}
 	if err := cfg.Validate(); err != nil {
-		return Config{}, fmt.Errorf("校验配置文件 %q: %w", path, err)
+		return Config{}, fmt.Errorf("validate configuration file %q: %w", path, err)
 	}
 	return cfg, nil
 }

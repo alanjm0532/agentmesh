@@ -10,7 +10,7 @@ import (
 )
 
 func wireServer(configPath string) (*Server, func(), error) {
-	// 组装配置、日志、业务服务与启动实例，并返回清理函数。
+	// Assemble configuration, logging, services, and the server with a cleanup function.
 	panic(wire.Build(
 		config.Load,
 		newLogger,

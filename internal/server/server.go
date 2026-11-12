@@ -20,21 +20,21 @@ func newServer(config config.Config, router *gin.Engine, logger *zap.Logger) *Se
 }
 
 func (s *Server) Run() error {
-	s.logger.Info("启动服务", zap.String("addr", s.config.Server.Addr), zap.String("mode", s.config.Server.Mode))
+	s.logger.Info("starting HTTP server", zap.String("addr", s.config.Server.Addr), zap.String("mode", s.config.Server.Mode))
 	return s.router.Run(s.config.Server.Addr)
 }
 
 func Run(configPath string) int {
-	// 启动 Wire 组装的服务，并在返回前清理依赖。
+	// Initialize the server through Wire and clean up dependencies before returning.
 	server, cleanup, err := wireServer(configPath)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "初始化服务失败:", err)
+		_, _ = fmt.Fprintln(os.Stderr, "initialize server:", err)
 		return 1
 	}
 	defer cleanup()
 
 	if err = server.Run(); err != nil {
-		server.logger.Error("服务退出", zap.Error(err))
+		server.logger.Error("HTTP server stopped", zap.Error(err))
 		return 1
 	}
 	return 0
