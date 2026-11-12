@@ -25,7 +25,7 @@ agentmesh/
 │   │   └── middleware/         # 请求标识中间件
 │   └── cli/
 │       ├── command/            # Cobra 命令和 Bubble Tea 交互
-│       ├── client/             # net/http 请求和 encoding/json 解析
+│       ├── client/             # Resty HTTP 请求和 encoding/json 解析
 │       └── config/             # CLI Viper 配置加载
 ├── pkg/
 │   └── protocol/               # AgentMesh Protocol，两端共用
@@ -51,7 +51,7 @@ Server 和 CLI 都直接引用 `github.com/alanjm0532/agentmesh/pkg/protocol`。
 | CLI 命令 | Cobra |
 | 命令行交互 | Bubble Tea |
 | 配置管理 | Viper |
-| HTTP 请求 | `net/http` |
+| HTTP 请求 | `github.com/go-resty/resty/v2` |
 | JSON | `encoding/json` |
 
 ## 快速开始
