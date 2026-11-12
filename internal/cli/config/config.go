@@ -47,18 +47,8 @@ func Load(path string) (Config, error) {
 }
 
 func Set(path, key, value string) (resultErr error) {
-	switch key {
-	case "server":
-		if err := validator.New().Var(value, "required,http_url"); err != nil {
-			return fmt.Errorf("invalid server URL: expected an HTTP or HTTPS URL: %w", err)
-		}
-	case "timeout":
-		duration, err := time.ParseDuration(value)
-		if err != nil || duration <= 0 {
-			return fmt.Errorf("invalid timeout %q: expected a positive Go duration, such as 5s", value)
-		}
-	default:
-		return fmt.Errorf("unsupported setting %q; supported settings: server, timeout", key)
+	if err := validateSetting(key, value); err != nil {
+		return err
 	}
 
 	v := viper.New()
