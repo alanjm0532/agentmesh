@@ -7,8 +7,10 @@ import (
 )
 
 func Execute() error {
-	var cfg config.Config
+	return newRootCommand(new(config.Config)).Execute()
+}
 
+func newRootCommand(cfg *config.Config) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "agentmesh",
 		Short:         "AgentMesh command-line client",
@@ -19,12 +21,14 @@ func Execute() error {
 			if err != nil {
 				return err
 			}
-			cfg, err = config.Load(configPath)
+			*cfg, err = config.Load(configPath)
 			return err
 		},
 	}
 	flags := root.PersistentFlags()
 	flags.String("config", "", "CLI TOML configuration file path (default: agentmesh/config.toml in the OS user configuration directory)")
-	root.AddCommand(newPingCommand(&cfg), newConfigCommand())
-	return root.Execute()
+	for _, factory := range commandFactories {
+		root.AddCommand(factory(cfg))
+	}
+	return root
 }

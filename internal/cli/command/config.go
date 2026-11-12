@@ -8,7 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newConfigCommand() *cobra.Command {
+func init() {
+	registerCommand(newConfigCommand)
+}
+
+func newConfigCommand(_ *config.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Manage CLI configuration",
