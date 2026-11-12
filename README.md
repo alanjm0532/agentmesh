@@ -24,7 +24,7 @@ agentmesh/
 │   │   ├── repository/         # 数据访问层
 │   │   └── middleware/         # 请求标识中间件
 │   └── cli/
-│       ├── command/            # Cobra 命令和 Bubble Tea 交互
+│       ├── command/            # Cobra 命令
 │       ├── client/             # Resty HTTP 请求和 encoding/json 解析
 │       └── config/             # CLI Viper 配置加载
 ├── pkg/
@@ -49,7 +49,6 @@ Server 和 CLI 都直接引用 `github.com/alanjm0532/agentmesh/pkg/protocol`。
 | --- | --- |
 | HTTP 服务 | Gin |
 | CLI 命令 | Cobra |
-| 命令行交互 | Bubble Tea |
 | 配置管理 | Viper |
 | HTTP 请求 | `github.com/go-resty/resty/v2` |
 | JSON | `encoding/json` |
@@ -73,9 +72,6 @@ make run-cli ARGS="ping"
 
 成功时输出 `pong`，退出码为 0。连接失败、超时、HTTP 状态异常或响应不符合预期时，
 错误写入标准错误，退出码为 1。
-
-在交互终端中，Bubble Tea 显示请求状态，按 `q`、`Esc` 或 `Ctrl+C` 取消请求。
-输入或输出被重定向时自动跳过交互界面。最终结果始终写入 stdout，交互状态写入 stderr。
 
 ## CLI 配置与参数
 
