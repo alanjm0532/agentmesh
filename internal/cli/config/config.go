@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -15,6 +17,14 @@ type Config struct {
 
 func (c Config) Validate() error {
 	return validator.New().Struct(c)
+}
+
+func DefaultPath() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("resolve user configuration directory: %w", err)
+	}
+	return filepath.Join(dir, "agentmesh", "config.toml"), nil
 }
 
 func Load(path string) (Config, error) {

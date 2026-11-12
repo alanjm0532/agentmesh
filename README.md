@@ -35,7 +35,7 @@ agentmesh/
 ├── docs/                       # Reserved for documentation
 ├── deployments/
 │   ├── server.toml             # Default server configuration
-│   └── cli.toml                # Default CLI configuration
+│   └── cli.toml                # Example CLI configuration
 ├── go.mod
 ├── go.sum
 ├── Makefile
@@ -67,9 +67,9 @@ make run
 The server listens on `127.0.0.1:8080` by default. Run the CLI in another terminal:
 
 ```bash
-go run ./cmd/agentmesh ping
+go run ./cmd/agentmesh --config deployments/cli.toml ping
 # Or use the Makefile
-make run-cli ARGS="ping"
+make run-cli ARGS="--config deployments/cli.toml ping"
 ```
 
 On success, the CLI prints `pong` and exits with code 0. Connection failures, timeouts, unexpected HTTP status codes, and invalid responses produce an error on stderr and exit with code 1.
@@ -84,9 +84,21 @@ go run ./cmd/agentmesh --config /path/to/cli.toml ping
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--config` | `deployments/cli.toml` | Path to the required CLI TOML configuration file |
+| `--config` | OS user configuration directory + `agentmesh/config.toml` | Path to the required CLI TOML configuration file |
 
-Viper reads `deployments/cli.toml` relative to the working directory by default:
+Without `--config`, the CLI uses Go's `os.UserConfigDir()` to locate the file:
+
+| OS | Default Path |
+| --- | --- |
+| Linux and other Unix systems | `$XDG_CONFIG_HOME/agentmesh/config.toml` if set; otherwise `~/.config/agentmesh/config.toml` |
+| macOS | `~/Library/Application Support/agentmesh/config.toml` |
+| Windows | `%AppData%\agentmesh\config.toml` |
+
+Copy `deployments/cli.toml` to this location, or use `--config` to select a file explicitly.
+The CLI does not create the directory or configuration file automatically.
+An explicit `--config` path works independently of the OS user configuration directory.
+
+Example configuration:
 
 ```toml
 server = "http://127.0.0.1:8080"
