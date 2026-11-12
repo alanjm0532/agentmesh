@@ -64,12 +64,35 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check out installer and skill sources
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
       - name: Download CLI binaries
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           pattern: cli-*
           merge-multiple: true
           path: dist
+
+      - name: Check PowerShell installer syntax
+        shell: pwsh
+        run: |
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/install.ps1'), [ref]$null, [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Write-Error
+            exit 1
+          }
+
+      - name: Package installers and matching skill
+        run: |
+          sh -n scripts/install.sh
+          cp scripts/install.sh scripts/install.ps1 dist/
+          cp skills/agentmesh/SKILL.md dist/agentmesh-SKILL.md
+          cd dist
+          sha256sum agentmesh_* agentmesh-SKILL.md install.sh install.ps1 > SHA256SUMS
 
       - name: Publish release assets
         working-directory: dist

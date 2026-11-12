@@ -26,7 +26,8 @@ agentmesh/
 │   └── cli/
 │       ├── command/            # Cobra commands
 │       ├── client/             # Resty HTTP requests and encoding/json decoding
-│       └── config/             # CLI configuration loading with Viper
+│       ├── config/             # CLI configuration loading with Viper
+│       └── util/               # Shared CLI helpers
 ├── pkg/
 │   └── protocol/               # AgentMesh Protocol shared by server and CLI
 │       ├── ping.go             # PingResponse
@@ -57,6 +58,29 @@ Use English throughout the project, including documentation, source comments, CL
 
 ## Quick Start
 
+Install the latest released CLI and its AI agent skill (no Go or Node.js required).
+
+Linux / macOS:
+
+```bash
+curl -fsSL https://github.com/alanjm0532/agentmesh/releases/latest/download/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://github.com/alanjm0532/agentmesh/releases/latest/download/install.ps1 | iex
+```
+
+The installer detects the OS and architecture, verifies SHA-256 checksums, installs
+the binary for the current user, and installs the matching skill at
+`~/.agents/skills/agentmesh/SKILL.md`. Open a new terminal and a new agent session after
+installation; use the full binary path printed by the installer in an existing
+session. See [Installation](docs/installation.md) for paths, customization,
+upgrades, and a ready-to-copy AI installation prompt.
+
+### Run from source
+
 Start the HTTP server from the repository root:
 
 ```bash
@@ -67,6 +91,7 @@ make run
 The server listens on `127.0.0.1:8080` by default. Run the CLI in another terminal:
 
 ```bash
+go run ./cmd/agentmesh --config deployments/cli.toml config set server http://127.0.0.1:8080
 go run ./cmd/agentmesh --config deployments/cli.toml ping
 # Or use the Makefile
 make run-cli ARGS="--config deployments/cli.toml ping"
@@ -79,12 +104,14 @@ On success, the CLI prints `pong` and exits with code 0. Connection failures, ti
 ```bash
 go run ./cmd/agentmesh --help
 go run ./cmd/agentmesh ping --help
+go run ./cmd/agentmesh config set server https://agentmesh.example.com
+go run ./cmd/agentmesh config set timeout 10s
 go run ./cmd/agentmesh --config /path/to/cli.toml ping
 ```
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--config` | OS user configuration directory + `agentmesh/config.toml` | Path to the required CLI TOML configuration file |
+| `--config` | OS user configuration directory + `agentmesh/config.toml` | CLI TOML configuration file to read or update |
 
 Without `--config`, the CLI uses Go's `os.UserConfigDir()` to locate the file:
 
@@ -94,8 +121,25 @@ Without `--config`, the CLI uses Go's `os.UserConfigDir()` to locate the file:
 | macOS | `~/Library/Application Support/agentmesh/config.toml` |
 | Windows | `%AppData%\agentmesh\config.toml` |
 
-Copy `deployments/cli.toml` to this location, or use `--config` to select a file explicitly.
-The CLI does not create the directory or configuration file automatically.
+Save CLI settings with `agentmesh config set <key> <value>`:
+
+```bash
+agentmesh config set server https://agentmesh.example.com
+agentmesh config set timeout 10s
+agentmesh ping
+# Save to a different configuration file:
+agentmesh --config /path/to/cli.toml config set server https://agentmesh.example.com
+```
+
+Supported keys are `server` and `timeout`. Each command updates one setting and
+preserves the others. It creates the directory and TOML file if missing, with a
+`5s` timeout unless an explicit timeout is being saved. Settings can be saved in
+either order; `server` must be configured before running `ping`.
+
+Each supplied value is validated before writing. Invalid URLs, malformed or
+nonpositive durations, unknown keys, and unreadable or malformed existing files
+cause an error without replacing the file. TOML formatting and comments may be
+rewritten.
 An explicit `--config` path works independently of the OS user configuration directory.
 
 Example configuration:
@@ -105,14 +149,17 @@ server = "http://127.0.0.1:8080"
 timeout = "5s"
 ```
 
-The configuration file must exist and be readable. Both settings are required:
+For commands such as `ping`, the configuration file must exist and be readable.
+Both settings are required:
 
 | Setting | Validation |
 | --- | --- |
 | `server` | A valid HTTP or HTTPS URL |
 | `timeout` | A valid Go duration string greater than zero, such as `5s` |
 
-Runtime settings come exclusively from the TOML file. There are no fallback values, environment variable overrides, or `--server` and `--timeout` flags.
+Runtime settings come from the TOML file. `config set` persists settings;
+it does not contact the server. There are no environment variable overrides or
+`--server` and `--timeout` flags.
 Missing files, missing settings, invalid URLs, malformed durations, and nonpositive timeouts produce an error before any HTTP request is sent.
 
 Building and running the CLI does not require server configuration or Wire generation.
@@ -170,6 +217,7 @@ make help         # Show available commands
 Use the compiled CLI:
 
 ```bash
+./bin/agentmesh config set server https://agentmesh.example.com
 ./bin/agentmesh ping
 ./bin/agentmesh --config /path/to/cli.toml ping
 ```
@@ -190,7 +238,10 @@ Pushing any Git tag triggers `.github/workflows/release-cli.yml`. The workflow b
 | Windows | `agentmesh_windows_amd64.exe`, `agentmesh_windows_arm64.exe` |
 
 Each asset is a single executable. OS and architecture suffixes give every asset a unique name within the release, with `darwin` identifying macOS.
-The workflow uploads only the six executables.
+The workflow also publishes `install.sh`, `install.ps1`, `agentmesh-SKILL.md`, and
+`SHA256SUMS`. The checksum manifest covers the six executables, installers, and
+skill. Both installers resolve the latest published release once and download
+the CLI, skill, and manifest from that tag.
 
 To trigger a release after the workflow has been committed and pushed:
 
@@ -203,4 +254,8 @@ The workflow uses the repository's automatic `GITHUB_TOKEN` with `contents: writ
 Rerunning the workflow updates assets on an existing release for the same tag.
 
 Download the executable for your OS and architecture, then rename it to `agentmesh` or `agentmesh.exe`. On Linux and macOS, make it executable with `chmod +x agentmesh`.
-Create the required TOML configuration using the example above, either at the OS configuration path or at a path selected with `--config`.
+Use `agentmesh config set server <URL>` to configure the server, optionally with
+`--config` to select a file.
+Alternatively, use the one-click installer to install the executable and skill
+together. Releases created before installer assets were
+added support manual binary installation only.

@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
+	"github.com/alanjm0532/agentmesh/internal/cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -14,15 +15,9 @@ func Execute() error {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			configPath, err := cmd.Flags().GetString("config")
+			configPath, err := util.ResolveConfigPath(cmd)
 			if err != nil {
 				return err
-			}
-			if !cmd.Flags().Changed("config") {
-				configPath, err = config.DefaultPath()
-				if err != nil {
-					return err
-				}
 			}
 			cfg, err = config.Load(configPath)
 			return err
@@ -30,6 +25,6 @@ func Execute() error {
 	}
 	flags := root.PersistentFlags()
 	flags.String("config", "", "CLI TOML configuration file path (default: agentmesh/config.toml in the OS user configuration directory)")
-	root.AddCommand(newPingCommand(&cfg))
+	root.AddCommand(newPingCommand(&cfg), newConfigCommand())
 	return root.Execute()
 }
