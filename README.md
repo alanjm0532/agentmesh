@@ -235,6 +235,30 @@ the build context.
 Replace `/path/to/server.toml` with the absolute path to your configuration file.
 Check the running server with `curl http://127.0.0.1:8080/ping`.
 
+### Server image releases
+
+Pushing a Git tag triggers `.github/workflows/release-server.yml`, which builds
+the Linux amd64 server image and pushes it to GitHub Container Registry (GHCR).
+The image is named `ghcr.io/<owner>/<repository>-server` and uses the Git tag as
+its version. Branch pushes do not publish images, and no `latest` tag is generated.
+The workflow uses `GITHUB_TOKEN` with `packages: write` to authenticate.
+
+For `alanjm0532/agentmesh`, pushing `v0.1.0` publishes
+`ghcr.io/alanjm0532/agentmesh-server:v0.1.0`:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Run a published version with your configuration mounted:
+
+```bash
+docker run --rm --name agentmesh-server -p 8080:8080 \
+  -v "/path/to/server.toml:/app/deployments/server.toml:ro" \
+  ghcr.io/alanjm0532/agentmesh-server:v0.1.0
+```
+
 ## Build and Development Commands
 
 ```bash
