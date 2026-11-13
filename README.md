@@ -280,8 +280,8 @@ make help         # Show available commands
 `make init` installs golangci-lint v2.15.0 with support for Go 1.27 export data.
 Add `$(go env GOPATH)/bin` to your `PATH`
 to use it. `.golangci.yml` uses the default golangci-lint v2 rules.
-GitHub Actions runs `make init` and `make lint` on branch pushes and pull requests.
-Tag releases run this check once, then start CLI and server image publishing in parallel.
+GitHub Actions runs `make init` and `make lint` only before tag releases.
+Each tag runs this check once, then starts CLI and server image publishing in parallel.
 
 Use the compiled CLI:
 
