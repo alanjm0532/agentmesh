@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
+	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -12,8 +13,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (h *Handler) login(c *gin.Context) {
-	var input LoginRequest
+type Handler struct {
+	userService *service.UserService
+}
+
+func NewHandler(userService *service.UserService) *Handler {
+	return &Handler{userService: userService}
+}
+
+func (h *Handler) Login(c *gin.Context) {
+	var input entity.LoginRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid login request"})
 		return
@@ -41,7 +50,7 @@ func (h *Handler) login(c *gin.Context) {
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) profile(c *gin.Context) {
+func (h *Handler) Profile(c *gin.Context) {
 	user, err := h.userService.Profile(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
 	if ent.IsNotFound(err) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
@@ -55,7 +64,7 @@ func (h *Handler) profile(c *gin.Context) {
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) logout(c *gin.Context) {
+func (h *Handler) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	if err := session.Save(); err != nil {
@@ -66,7 +75,7 @@ func (h *Handler) logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
-func (h *Handler) token(c *gin.Context) {
+func (h *Handler) Token(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	user, err := h.userService.Profile(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
 	if ent.IsNotFound(err) {
@@ -78,10 +87,10 @@ func (h *Handler) token(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to load token"})
 		return
 	}
-	c.JSON(http.StatusOK, TokenResponse{AccessToken: user.AccessToken})
+	c.JSON(http.StatusOK, entity.TokenResponse{AccessToken: user.AccessToken})
 }
 
-func (h *Handler) resetToken(c *gin.Context) {
+func (h *Handler) ResetToken(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	user, err := h.userService.ResetAccessToken(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
 	if ent.IsNotFound(err) {
@@ -93,7 +102,7 @@ func (h *Handler) resetToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to reset token"})
 		return
 	}
-	c.JSON(http.StatusOK, TokenResponse{AccessToken: user.AccessToken})
+	c.JSON(http.StatusOK, entity.TokenResponse{AccessToken: user.AccessToken})
 }
 
 func saveUserSession(c *gin.Context, user *ent.User) error {
@@ -104,8 +113,8 @@ func saveUserSession(c *gin.Context, user *ent.User) error {
 	return session.Save()
 }
 
-func profileResponse(user *ent.User) ProfileResponse {
-	return ProfileResponse{
+func profileResponse(user *ent.User) entity.ProfileResponse {
+	return entity.ProfileResponse{
 		ID:        user.ID.String(),
 		Username:  user.Username,
 		CreatedAt: user.CreatedAt.UTC(),

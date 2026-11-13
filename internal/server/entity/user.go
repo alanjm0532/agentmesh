@@ -1,4 +1,4 @@
-package handler
+package entity
 
 import "time"
 

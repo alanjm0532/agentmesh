@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/alanjm0532/agentmesh/pkg/protocol"
+	"github.com/alanjm0532/agentmesh/internal/protocol"
 	"github.com/go-resty/resty/v2"
 )
 

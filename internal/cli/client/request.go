@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/alanjm0532/agentmesh/pkg/protocol"
+	"github.com/alanjm0532/agentmesh/internal/protocol"
 )
 
 func doRequest[T any](ctx context.Context, c *Client, method, path string) (T, error) {

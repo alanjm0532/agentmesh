@@ -6,6 +6,7 @@ import (
 	"github.com/alanjm0532/agentmesh/internal/server/config"
 	"github.com/alanjm0532/agentmesh/internal/server/handler"
 	"github.com/alanjm0532/agentmesh/internal/server/repository"
+	"github.com/alanjm0532/agentmesh/internal/server/router"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
 	"github.com/google/wire"
 )
@@ -18,6 +19,7 @@ func wireServer(configPath string) (*Server, func(), error) {
 		repository.ProviderSet,
 		service.ProviderSet,
 		handler.ProviderSet,
+		router.ProviderSet,
 		newServer,
 	))
 }
