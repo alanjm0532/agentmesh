@@ -46,6 +46,7 @@ export default {
     "account.resetDone": "Token 已重置，请在客户端中使用新的 Token。",
     "account.unavailable": "无法加载账户，请重试。",
     "account.retry": "重试",
+    "error.unexpected": "操作失败，请重试。",
     "error.network": "无法连接服务器，请检查网络后重试。",
     "error.unauthorized": "登录状态校验失败，请重新登录并允许浏览器使用 Cookie。",
     "error.credentials": "用户名或密码错误。",

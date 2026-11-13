@@ -5,6 +5,10 @@ const messages = { en, 'zh-CN': zhCN };
 const languageKey = 'agentmesh.language';
 let language = 'en';
 
+export function hasTranslation(key) {
+    return typeof key === 'string' && (Object.hasOwn(messages[language], key) || Object.hasOwn(en, key));
+}
+
 export function t(key, params = {}) {
     const message = messages[language][key] ?? en[key] ?? key;
     return message.replace(/\{(\w+)\}/g, (match, name) => params[name] ?? match);

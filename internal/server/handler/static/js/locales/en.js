@@ -46,6 +46,7 @@ export default {
     "account.resetDone": "Token reset. Use the new token in your clients.",
     "account.unavailable": "Unable to load your account. Please try again.",
     "account.retry": "Try again",
+    "error.unexpected": "Something went wrong. Please try again.",
     "error.network": "Unable to reach the server. Check your connection and try again.",
     "error.unauthorized": "Login could not be verified. Please log in and allow cookies in your browser.",
     "error.credentials": "Invalid username or password.",

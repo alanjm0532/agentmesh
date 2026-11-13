@@ -42,12 +42,12 @@ export async function initAccountPanel() {
     }
 
     function handleError(error) {
-        if (error.status === 401) {
+        if (error?.status === 401) {
             clearToken();
             window.location.replace('/login.html');
             return;
         }
-        showNotice(error.key, 'danger', error.params);
+        showNotice(error?.key, 'danger', error?.params);
     }
 
     async function loadAccount() {

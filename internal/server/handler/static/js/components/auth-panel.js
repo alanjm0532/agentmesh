@@ -35,7 +35,7 @@ export async function initAuthPanel() {
             form.reset();
             window.location.replace('/');
         } catch (error) {
-            showNotice(error.key, 'danger', error.params);
+            showNotice(error?.key, 'danger', error?.params);
         } finally {
             setBusy(false);
         }
@@ -46,7 +46,7 @@ export async function initAuthPanel() {
         renderUser(await currentUser());
     } catch (error) {
         setText(status, 'access.unavailable');
-        showNotice(error.key, 'danger', error.params);
+        showNotice(error?.key, 'danger', error?.params);
     } finally {
         setBusy(false);
     }
