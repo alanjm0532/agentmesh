@@ -31,3 +31,7 @@ func (r *UserRepository) Create(ctx context.Context, username, hashedPassword, a
 		SetAccessToken(accessToken).
 		Save(ctx)
 }
+
+func (r *UserRepository) UpdateAccessToken(ctx context.Context, id uuid.UUID, accessToken string) (*ent.User, error) {
+	return r.client.User.UpdateOneID(id).SetAccessToken(accessToken).Save(ctx)
+}

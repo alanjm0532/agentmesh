@@ -62,6 +62,8 @@ func (h *Handler) registerWebRoutes(router *gin.Engine, store sessions.Store) {
 	web.POST("/login", h.login)
 	web.POST("/logout", h.logout)
 	web.GET("/profile", middleware.SessionAuth(), h.profile)
+	web.GET("/token", middleware.SessionAuth(), h.token)
+	web.POST("/token/reset", middleware.SessionAuth(), h.resetToken)
 }
 
 func (h *Handler) registerAPIRoutes(router *gin.Engine) {

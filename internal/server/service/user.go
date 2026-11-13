@@ -67,3 +67,11 @@ func (s *UserService) Login(ctx context.Context, username, password string) (*en
 func (s *UserService) Profile(ctx context.Context, id uuid.UUID) (*ent.User, error) {
 	return s.users.GetByID(ctx, id)
 }
+
+func (s *UserService) ResetAccessToken(ctx context.Context, id uuid.UUID) (*ent.User, error) {
+	token, err := util.GenerateToken()
+	if err != nil {
+		return nil, err
+	}
+	return s.users.UpdateAccessToken(ctx, id, token)
+}

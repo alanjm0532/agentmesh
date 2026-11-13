@@ -21,3 +21,11 @@ export function fetchProfile() {
 export function logoutUser() {
     return post('/logout', {});
 }
+
+export function fetchToken() {
+    return get('/token');
+}
+
+export function resetToken() {
+    return post('/token/reset', {});
+}

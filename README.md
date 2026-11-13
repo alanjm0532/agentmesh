@@ -199,12 +199,15 @@ Building and running the CLI does not require server configuration or Wire gener
 The server provides these endpoints:
 
 - `GET /`: serves the AgentMesh homepage with the current account entry.
-- `GET /login.html`: logs in and shows the current session, creating new accounts automatically.
+- `GET /login.html`: logs in, creating new accounts automatically.
+- `GET /account.html`: serves token management and logout for the current account.
 - `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
 - `GET /api/ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
 - `POST /web/login`: verifies an existing account or creates one if the username does not exist, then establishes a Cookie Session.
 - `POST /web/logout`: clears and saves the current session.
 - `GET /web/profile`: returns the current user; missing or invalid sessions receive HTTP 401.
+- `GET /web/token`: returns the current user's access token; requires a Cookie Session.
+- `POST /web/token/reset`: generates and persists a replacement token for the current user; requires a Cookie Session.
 
 Page and static asset routes are registered in the `/` group. Frontend endpoints
 use the `/web` group, and CLI endpoints use the `/api` group. Each HTTP client
@@ -225,7 +228,8 @@ Docker image needs no separate static asset copy or CDN access at runtime.
 ```text
 internal/server/handler/static/
 ├── index.html                  # View: homepage and current account entry
-├── login.html                  # View: login and current account
+├── login.html                  # View: login with automatic account creation
+├── account.html                # View: token management and logout
 ├── css/app.css                 # Application styles
 ├── images/                     # Brand artwork, favicons, and SVG icon sprite
 ├── js/
@@ -270,11 +274,16 @@ The `/api/ping` and `/web/login`
 endpoints are public. Login uses `gin-contrib/sessions` with a
 cookie store. The signed `agentmesh_session` cookie contains only the user ID,
 uses `HttpOnly` and `SameSite=Lax`, is scoped to `/web`, and expires after one day.
-The account page checks `/web/profile` on load and after login
-to confirm the browser session. Successful login then redirects
-to the homepage. Logout clears the session and saves it.
-Web requests send same-origin cookies automatically. The generated access token is
-stored for future API use; Bearer token authentication is not implemented.
+The login page checks `/web/profile` on load and after login to confirm the browser
+session. Successful login redirects to the homepage, where the account entry links
+to `/account.html`. Already authenticated visitors to the login page go directly
+to token management. The account page redirects unauthenticated visitors to login.
+It shows the current username and provides a masked token with show/hide, copy,
+and reset controls. Reset requires confirmation and replaces the persisted token.
+Token responses use `Cache-Control: no-store`. Logout clears and saves the session,
+then returns to the homepage.
+Web requests send same-origin cookies automatically. Access tokens are stored for
+future API use; Bearer token authentication is not implemented.
 Protect additional Web routes with `middleware.SessionAuth()`.
 
 Edit files directly under `static/`; changes take effect with the next server

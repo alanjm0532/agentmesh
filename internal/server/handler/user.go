@@ -66,6 +66,36 @@ func (h *Handler) logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
+func (h *Handler) token(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	user, err := h.userService.Profile(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
+	if ent.IsNotFound(err) {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to load token"})
+		return
+	}
+	c.JSON(http.StatusOK, TokenResponse{AccessToken: user.AccessToken})
+}
+
+func (h *Handler) resetToken(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	user, err := h.userService.ResetAccessToken(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
+	if ent.IsNotFound(err) {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to reset token"})
+		return
+	}
+	c.JSON(http.StatusOK, TokenResponse{AccessToken: user.AccessToken})
+}
+
 func saveUserSession(c *gin.Context, user *ent.User) error {
 	session := sessions.Default(c)
 	session.Clear()

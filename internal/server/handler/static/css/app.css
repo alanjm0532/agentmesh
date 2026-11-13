@@ -417,14 +417,40 @@ button:focus-visible, a:focus-visible {
 .token-card-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .token-card-heading .icon { color: var(--app-accent); }
 .token-card-heading h2 { margin: 0; font-size: 16px; font-weight: 650; }
+.token-card-heading .token-home-link { margin-left: auto; flex-shrink: 0; }
 .token-status { color: var(--app-muted); font-size: 12px; margin-bottom: 26px; }
 .token-input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.token-field { display: flex; align-items: center; min-width: 0; background: var(--app-soft); border: 1px solid var(--app-border); border-radius: 11px; }
+.token-field:focus-within { border-color: var(--app-accent); box-shadow: 0 0 0 3px var(--app-accent-soft); }
+.token-field .form-control { flex: 1; width: 0; background: transparent; border: 0; box-shadow: none; }
+.token-input-actions { display: flex; flex-shrink: 0; gap: 4px; padding-right: 7px; }
+.token-input-actions .control-button { width: 30px; height: 30px; }
+.token-input-actions .control-button:disabled { opacity: 0.5; }
 .token-help { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 24px; padding: 14px; color: var(--app-muted); background: var(--app-soft); border-radius: 10px; }
 .token-help .icon { margin-top: 2px; width: 14px; height: 14px; }
 .token-help p { font-size: 11px; line-height: 1.8; margin: 0; }
 .token-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-#auth-logout[hidden] { display: none; }
+.account-actions { flex-wrap: nowrap; gap: 8px; }
+.account-actions > .btn { flex: 1; min-width: 0; padding-inline: 8px; font-size: 12px; white-space: normal; }
+.account-actions > [hidden] { display: none; }
+#token-controls[hidden], #account-retry[hidden] { display: none; }
 .alert { font-size: 13px; border-radius: 12px; }
+
+.confirm-dialog {
+    width: min(420px, calc(100% - 40px));
+    max-height: calc(100dvh - 40px);
+    margin: auto;
+    padding: 28px;
+    color: var(--app-color);
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 20px;
+    box-shadow: var(--app-shadow);
+}
+.confirm-dialog::backdrop { background: rgb(11 15 25 / 55%); backdrop-filter: blur(4px); }
+.confirm-dialog h2 { margin: 0 0 14px; font-size: 18px; font-weight: 650; }
+.confirm-dialog p { margin: 0 0 24px; color: var(--app-muted); font-size: 14px; line-height: 1.8; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
 @media (min-width: 1440px) {
     .hero { grid-template-columns: 1fr 1fr; gap: 64px; }

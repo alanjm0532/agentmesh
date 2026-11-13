@@ -3,16 +3,20 @@ import { setText } from '../utils/i18n.js';
 
 export function initAccountLink() {
     const label = document.getElementById('account-link-label');
+    const link = label.closest('a');
 
     async function refresh() {
         try {
             const user = await currentUser();
             if (user === null) {
+                link.href = '/login.html';
                 setText(label, 'common.apiAccess');
             } else {
+                link.href = '/account.html';
                 setText(label, 'home.account', { username: user.username });
             }
         } catch {
+            link.href = '/account.html';
             // Keep the account entry available when session verification fails.
             setText(label, 'access.settings');
         }

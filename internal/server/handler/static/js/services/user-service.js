@@ -1,4 +1,4 @@
-import { fetchProfile, loginUser, logoutUser } from '../api/user-api.js';
+import { fetchProfile, fetchToken, loginUser, logoutUser, resetToken } from '../api/user-api.js';
 
 export async function authenticate(credentials) {
     await loginUser(credentials);
@@ -19,4 +19,14 @@ export async function currentUser() {
 
 export async function logout() {
     await logoutUser();
+}
+
+export async function currentToken() {
+    const result = await fetchToken();
+    return result.access_token;
+}
+
+export async function regenerateToken() {
+    const result = await resetToken();
+    return result.access_token;
 }
