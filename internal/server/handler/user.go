@@ -42,7 +42,7 @@ func (h *Handler) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to log in"})
 		return
 	}
-	if err := saveUserSession(c, user); err != nil {
+	if err = saveUserSession(c, user); err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to save session"})
 		return
