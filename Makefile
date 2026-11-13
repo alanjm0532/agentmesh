@@ -7,8 +7,9 @@ VERSION ?= latest
 .DEFAULT_GOAL := help
 .PHONY: init wire generate fmt lint build build-cli build-server run run-cli all help
 
-init: ## Download project and code generation tool dependencies
+init: ## Download project dependencies and install golangci-lint
 	$(GO) mod download
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.1
 
 wire: ## Generate Wire dependency injection code
 	$(GO) tool wire ./internal/server
@@ -18,8 +19,8 @@ generate: wire ## Generate project code (Wire)
 fmt: ## Format Go code
 	$(GO) fmt ./...
 
-lint: generate ## Check code with go vet
-	$(GO) vet ./...
+lint: generate ## Generate Wire code and run golangci-lint
+	golangci-lint run -v
 
 build: build-cli build-server ## Build the CLI and HTTP server
 

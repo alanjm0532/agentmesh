@@ -216,6 +216,7 @@ Gin request and recovery logs use `gin-contrib/zap`. The cleanup function return
 ## Build and Development Commands
 
 ```bash
+make init         # Download project dependencies and install golangci-lint
 make build-cli    # Build the CLI: bin/agentmesh
 make build-cli VERSION=v0.1.0 # Embed a CLI release version
 make build-server # Generate Wire code and build the server: bin/agentmesh-server
@@ -225,9 +226,13 @@ make run-cli ARGS="--config /path/to/cli.toml ping"
 make wire         # Generate the server's wire_gen.go
 make generate     # Generate project code (Wire)
 make fmt          # Format Go code
-make lint         # Generate Wire code and run go vet
+make lint         # Generate Wire code and run golangci-lint
 make help         # Show available commands
 ```
+
+`make init` installs golangci-lint v2.13.1. Add `$(go env GOPATH)/bin` to your `PATH`
+to use it. `.golangci.yml` uses the default golangci-lint v2 rules.
+GitHub Actions runs `make init` and `make lint` on pushes and pull requests.
 
 Use the compiled CLI:
 
