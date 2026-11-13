@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/repository"
+	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,10 +24,9 @@ func (s *UserService) Register(ctx context.Context, username, password string) (
 		return nil, err
 	}
 
-	// Generate an independent 256-bit access token for each user.
-	var token [32]byte
-	if _, err := rand.Read(token[:]); err != nil {
+	accessToken, err := util.GenerateToken()
+	if err != nil {
 		return nil, err
 	}
-	return s.users.Create(ctx, username, string(hashedPassword), hex.EncodeToString(token[:]))
+	return s.users.Create(ctx, username, string(hashedPassword), accessToken)
 }

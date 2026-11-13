@@ -50,7 +50,11 @@ func TestUserServiceRegister(t *testing.T) {
 		if cost != bcrypt.DefaultCost {
 			t.Errorf("bcrypt cost = %d, want %d", cost, bcrypt.DefaultCost)
 		}
-		token, err := hex.DecodeString(stored.AccessToken)
+		tokenValue, hasPrefix := strings.CutPrefix(stored.AccessToken, "agentmesh_")
+		if !hasPrefix {
+			t.Fatal("access token must start with agentmesh_")
+		}
+		token, err := hex.DecodeString(tokenValue)
 		if err != nil {
 			t.Fatalf("decode access token: %v", err)
 		}

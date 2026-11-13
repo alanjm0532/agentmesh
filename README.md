@@ -306,7 +306,8 @@ timestamps on creation and refreshes `updated_at` for Ent updates. Username
 uniqueness is enforced by the database, including concurrent registrations; text
 comparison follows the selected database's collation. Passwords are hashed using
 `bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)` before insertion.
-Each registration generates a random 256-bit access token. Registration responses
+Each registration uses `util.GenerateToken` to generate an access token with the
+`agentmesh_` prefix followed by 64 hexadecimal characters (256 random bits). Registration responses
 include the user ID, username, token, and timestamps, and omit the password hash.
 
 ```bash
