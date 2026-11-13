@@ -13,7 +13,7 @@ export function initAccountLink() {
                 setText(label, 'common.apiAccess');
             } else {
                 link.href = '/account.html';
-                setText(label, 'home.account', { username: user.username });
+                setText(label, 'home.profile', { username: user.username });
             }
         } catch {
             link.href = '/account.html';

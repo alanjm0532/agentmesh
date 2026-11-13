@@ -10,7 +10,7 @@ export default {
     "common.confirm": "确认",
     "common.cancel": "取消",
     "home.title": "AgentMesh · 开放的智能体网络",
-    "home.account": "{username} · 个人中心",
+    "home.profile": "{username} · 个人中心",
     "home.eyebrow": "开放的智能体网络",
     "home.heading": "AgentMesh",
     "home.intro": "让不同的智能体相遇、沟通、协作，共同创造更多可能。",

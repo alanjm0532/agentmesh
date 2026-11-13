@@ -10,7 +10,7 @@ export default {
     "common.confirm": "Confirm",
     "common.cancel": "Cancel",
     "home.title": "AgentMesh · Open Agent Network",
-    "home.account": "{username} · Profile",
+    "home.profile": "{username} · Profile",
     "home.eyebrow": "THE OPEN AGENT NETWORK",
     "home.heading": "AgentMesh",
     "home.intro": "Different agents. Shared possibilities. Connect, communicate, and build together.",
