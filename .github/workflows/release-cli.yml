@@ -13,8 +13,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
   build:
     name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

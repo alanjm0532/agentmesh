@@ -237,8 +237,9 @@ Check the running server with `curl http://127.0.0.1:8080/ping`.
 
 ### Server image releases
 
-Pushing a Git tag triggers `.github/workflows/release-server.yml`, which builds
-the Linux amd64 server image and pushes it to GitHub Container Registry (GHCR).
+Pushing a Git tag triggers `.github/workflows/release-server.yml`, which runs
+lint first. After lint passes, it builds the Linux amd64 server image and pushes
+it to GitHub Container Registry (GHCR).
 The image is named `ghcr.io/<owner>/<repository>-server` and uses the Git tag as
 its version. Branch pushes do not publish images, and no `latest` tag is generated.
 The workflow uses `GITHUB_TOKEN` with `packages: write` to authenticate.
@@ -279,7 +280,8 @@ make help         # Show available commands
 `make init` installs golangci-lint v2.15.0 with support for Go 1.27 export data.
 Add `$(go env GOPATH)/bin` to your `PATH`
 to use it. `.golangci.yml` uses the default golangci-lint v2 rules.
-GitHub Actions runs `make init` and `make lint` on pushes and pull requests.
+GitHub Actions runs `make init` and `make lint` on branch pushes and pull requests.
+Both tag release workflows reuse this check and require it to pass before building.
 
 Use the compiled CLI:
 
@@ -296,7 +298,7 @@ Generate Wire code before running `go run ./cmd/server` directly as well.
 
 ## CLI Releases
 
-Pushing any Git tag triggers `.github/workflows/release-cli.yml`. The workflow builds the CLI using the Go version declared in `go.mod` and publishes standalone executables to a GitHub Release for that tag after all builds succeed.
+Pushing any Git tag triggers `.github/workflows/release-cli.yml`. After lint passes, the workflow builds the CLI using the Go version declared in `go.mod` and publishes standalone executables to a GitHub Release for that tag after all builds succeed.
 
 | OS | Release Assets |
 | --- | --- |
