@@ -55,7 +55,8 @@ Both the server and CLI import `github.com/alanjm0532/agentmesh/pkg/protocol`.
 | HTTP requests | `github.com/go-resty/resty/v2` |
 | JSON | `encoding/json` |
 
-Use English throughout the project, including documentation, source comments, CLI help, output, errors, and logs. Do not add i18n or language-switching features. See [agent.md](agent.md) for project conventions.
+Use English for documentation, source comments, CLI help, output, errors, and logs.
+The web frontend supports English and Simplified Chinese. See [agent.md](agent.md) for project conventions.
 
 ## Quick Start
 
@@ -183,6 +184,9 @@ Building and running the CLI does not require server configuration or Wire gener
 
 The server provides these endpoints:
 
+- `GET /`: serves the Hello World page with a greeting form.
+- `GET /login.html`: configures an existing Bearer token for the browser session.
+- `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
 - `GET /ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
 - `GET /hello?name=Alan`: returns `{"message":"Hello, Alan!"}`.
 
@@ -190,6 +194,67 @@ The server provides these endpoints:
 curl http://127.0.0.1:8080/ping
 curl 'http://127.0.0.1:8080/hello?name=Alan'
 ```
+
+### Web frontend
+
+Open `http://127.0.0.1:8080/` after starting the server. The frontend uses HTML,
+local Bootstrap 5.3.3 CSS, and native JavaScript ES Modules with Fetch API.
+It requires no frontend framework, Node.js, package manager, or build step.
+All frontend files are embedded in the server binary and served by Gin, so the
+Docker image needs no separate static asset copy or CDN access at runtime.
+
+```text
+internal/server/handler/static/
+├── index.html                  # View: greeting form
+├── login.html                  # View: optional existing API token settings
+├── css/app.css                 # Application styles
+├── images/                     # Brand artwork, favicons, and SVG icon sprite
+├── js/
+│   ├── main.js                 # Home page entry point
+│   ├── access.js               # Token settings entry point
+│   ├── theme-init.js           # Apply saved or system theme before styles load
+│   ├── components/             # UI events and DOM rendering
+│   ├── services/               # Business logic
+│   ├── api/                    # Endpoint definitions and shared Fetch client
+│   ├── locales/                # English and Simplified Chinese translations
+│   └── utils/                  # Session storage and notification helpers
+└── vendor/bootstrap/           # Local CSS and MIT license
+```
+
+Page entry points initialize UI components. Components call services, which use
+API modules to access the backend. The shared HTTP client manages JSON requests,
+Bearer headers, network errors, HTTP failures, and invalid JSON responses.
+Dynamic messages are rendered with `textContent`.
+
+Both pages include English / Simplified Chinese language buttons. On the first
+visit, the UI follows the browser language (Chinese maps to Simplified Chinese;
+other languages fall back to English). Manual selections are saved in
+`localStorage` and used across pages and future visits. Switching languages updates
+page titles, navigation labels, accessibility labels, and
+notifications immediately without resetting forms or sending API requests.
+Translation keys and parameters are retained for dynamic status and error messages.
+API response content remains in the language returned by the server. Translation
+resources are local ES Modules; no i18n library or build step is required.
+
+Both pages also offer icon buttons for day, night, and system appearance modes using Bootstrap's
+`data-bs-theme` attribute. The default follows the operating system and responds
+to system theme changes. Manual selections are saved in `localStorage`, shared
+across pages and open tabs, and applied before styles load to avoid a theme flash.
+Theme switching preserves form input and works alongside language switching.
+
+The responsive navigation and footer link to
+`https://github.com/alanjm0532/agentmesh`. Language and appearance buttons expose
+their selected state with `aria-pressed`; appearance buttons include localized
+labels and tooltips. Icons are served from a local SVG sprite.
+
+The existing `/hello` and `/ping` APIs remain public. There is no login or token
+issuance API. The API access page stores an existing token in `sessionStorage`
+for deployments that require it; saving a token does not validate it. API requests
+include the configured token, and HTTP 401 responses clear it. Add business API
+modules as backend endpoints become available.
+
+Edit files directly under `static/`; changes take effect with the next server
+build because the assets are embedded.
 
 The server reads `deployments/server.toml` relative to the working directory by default:
 

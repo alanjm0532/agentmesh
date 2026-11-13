@@ -29,6 +29,7 @@ func NewRouter(config config.Config, h *Handler, logger *zap.Logger) *gin.Engine
 		ginzap.Ginzap(logger, time.RFC3339, true),
 		ginzap.RecoveryWithZap(logger, true),
 	)
+	registerStatic(router)
 	router.GET(protocol.PingPath, h.ping)
 	router.GET("/hello", h.hello)
 	return router
