@@ -1,0 +1,20 @@
+[server]
+addr = "127.0.0.1:8080"
+mode = "debug"
+
+[database]
+# Enable one driver and DSN pair at a time.
+# PostgreSQL (default)
+driver = "postgres"
+dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable"
+
+# MySQL
+# driver = "mysql"
+# dsn = "agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC"
+
+# SQLite
+# driver = "sqlite"
+# dsn = "file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)"
+
+# SQLite in-memory alternative
+# dsn = "file::memory:?_pragma=foreign_keys(1)"

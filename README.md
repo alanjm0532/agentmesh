@@ -35,8 +35,11 @@ agentmesh/
 │       ├── ping.go             # PingResponse
 │       └── hello.go            # HelloRequest, HelloResponse
 ├── migrations/                 # Reserved for database migrations
-├── docs/                       # Reserved for documentation
-├── deployments/
+├── docs/
+│   ├── config/                 # Server and CLI configuration examples
+│   ├── configuration.md        # Configuration setup and database settings
+│   └── installation.md         # CLI installation instructions
+├── deployments/                # Local configuration, ignored by Git
 │   ├── server.toml             # Default server configuration
 │   └── cli.toml                # Example CLI configuration
 ├── go.mod
@@ -104,9 +107,16 @@ without server configuration.
 Start the HTTP server from the repository root:
 
 ```bash
+mkdir -p deployments
+cp docs/config/server.toml deployments/server.toml
+cp docs/config/cli.toml deployments/cli.toml
 make init
 make run
 ```
+
+Update database credentials before starting the server. See
+[Configuration examples](docs/configuration.md) for PostgreSQL, MySQL, SQLite,
+and CLI configuration files.
 
 The server listens on `127.0.0.1:8080` by default. Run the CLI in another terminal:
 
@@ -270,7 +280,9 @@ modules as backend endpoints become available.
 Edit files directly under `static/`; changes take effect with the next server
 build because the assets are embedded.
 
-The server reads `deployments/server.toml` relative to the working directory by default:
+The server reads `deployments/server.toml` relative to the working directory by default.
+Copy a template from [docs/config](docs/config) and follow the
+[configuration setup](docs/configuration.md):
 
 ```toml
 [server]
