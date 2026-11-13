@@ -10,7 +10,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -29,11 +28,11 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	user, err := h.userService.Login(c.Request.Context(), input.Username, input.Password)
-	if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+	if errors.Is(err, entity.ErrPasswordTooLong) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Password must not exceed 72 bytes"})
 		return
 	}
-	if errors.Is(err, service.ErrInvalidCredentials) {
+	if errors.Is(err, entity.ErrInvalidCredentials) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
 		return
 	}

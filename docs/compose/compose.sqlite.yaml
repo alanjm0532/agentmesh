@@ -1,0 +1,19 @@
+services:
+  agentmesh:
+    volumes:
+      - sqlite-data:/app/data
+    depends_on:
+      sqlite-init:
+        condition: service_completed_successfully
+
+  sqlite-init:
+    image: ghcr.io/alanjm0532/agentmesh-server:v0.1.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R agentmesh:agentmesh /app/data"]
+    restart: "no"
+    volumes:
+      - sqlite-data:/app/data
+
+volumes:
+  sqlite-data:

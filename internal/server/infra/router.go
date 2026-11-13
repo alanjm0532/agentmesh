@@ -17,6 +17,7 @@ import (
 )
 
 func NewRouter(config config.Config, h *handler.Handler, logger *zap.Logger) *gin.Engine {
+	configureValidation()
 	gin.SetMode(config.Server.Mode)
 	router := gin.New()
 	_ = router.SetTrustedProxies(nil)

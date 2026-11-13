@@ -2,16 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
+	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/repository"
 	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var ErrInvalidCredentials = errors.New("invalid username or password")
 
 type UserService struct {
 	users *repository.UserRepository
@@ -37,7 +35,7 @@ func (s *UserService) createUser(ctx context.Context, username, password string)
 
 func (s *UserService) Login(ctx context.Context, username, password string) (*ent.User, error) {
 	if len(password) > 72 {
-		return nil, bcrypt.ErrPasswordTooLong
+		return nil, entity.ErrPasswordTooLong
 	}
 	user, err := s.users.GetByUsername(ctx, username)
 	if ent.IsNotFound(err) {
@@ -59,7 +57,7 @@ func (s *UserService) Login(ctx context.Context, username, password string) (*en
 	}
 	// Verify the submitted password against the persisted bcrypt hash.
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, entity.ErrInvalidCredentials
 	}
 	return user, nil
 }

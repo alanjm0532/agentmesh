@@ -1,0 +1,11 @@
+name: agentmesh
+
+services:
+  agentmesh:
+    image: ghcr.io/alanjm0532/agentmesh-server:v0.1.0
+    restart: unless-stopped
+    command: ["-config", "/app/config/server.toml"]
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./server.toml:/app/config/server.toml:ro

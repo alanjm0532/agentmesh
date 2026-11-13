@@ -5,7 +5,7 @@ export async function loginUser(credentials) {
         return await post('/login', credentials);
     } catch (error) {
         if (error.status === 400) {
-            throw new ApiError('error.passwordLength', error.status);
+            throw new ApiError('error.loginInput', error.status);
         }
         if (error.status === 401) {
             throw new ApiError('error.credentials', error.status);

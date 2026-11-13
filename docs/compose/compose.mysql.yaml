@@ -1,0 +1,28 @@
+services:
+  agentmesh:
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--default-time-zone=+00:00"]
+    environment:
+      MYSQL_DATABASE: agentmesh
+      MYSQL_USER: agentmesh
+      MYSQL_PASSWORD: ""
+      MYSQL_ROOT_PASSWORD: ""
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # Fill in the application password after --password= as well.
+      test: ["CMD", "mysql", "--protocol=TCP", "-h", "127.0.0.1", "-u", "agentmesh", "--password=", "-D", "agentmesh", "-e", "SELECT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  mysql-data:

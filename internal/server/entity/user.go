@@ -3,8 +3,8 @@ package entity
 import "time"
 
 type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" binding:"required,notblank,max=255"`
+	Password string `json:"password" binding:"required,maxbytes=72"`
 }
 
 type ProfileResponse struct {
