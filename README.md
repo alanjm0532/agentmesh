@@ -390,10 +390,11 @@ make build        # Build the CLI and HTTP server
 make run          # Generate Ent and Wire code and start the HTTP server
 make run-cli ARGS="--config /path/to/cli.toml ping"
 make ent          # Generate Ent code from internal/server/ent/schema
-make wire         # Generate Ent code and the server's wire_gen.go
+make wire         # Generate Ent code and Wire injectors for the server and tests
 make generate     # Generate project code (Ent and Wire)
 make fmt          # Format Go code
 make lint         # Generate Ent and Wire code and run golangci-lint
+make test         # Generate code and run tests with deployments/server.toml
 make help         # Show available commands
 ```
 
@@ -412,10 +413,45 @@ Use the compiled CLI:
 ```
 
 Ent and Wire are managed through `tool` directives in `go.mod`; no global installation is required.
-After changing server dependencies, run `make wire` to generate `internal/server/wire_gen.go`.
+After changing dependencies, run `make wire` to generate `internal/server/wire_gen.go`
+and `internal/testutil/wire_gen.go`.
 Generate Ent and Wire code before running `go run ./cmd/server` directly as well.
 Ent output, `wire_gen.go`, and `bin/` build artifacts are ignored by Git. Keep Ent
 schema sources under `internal/server/ent/schema/`; do not edit generated files manually.
+
+Tests call `testutil.New(t)` to obtain dependencies assembled by a dedicated Wire
+injector in `internal/testutil/wire.go`. The injector reuses the server's repository
+and service provider sets with a database client and a silent Zap logger.
+It exposes the Ent client, repositories, and services through `Dependencies`:
+
+```go
+deps := testutil.New(t)
+registered, err := deps.UserService.Register(ctx, username, password)
+```
+
+Database connections close automatically after each test. New tests can use these dependencies without
+manually constructing repositories and services. Add new dependencies to the
+struct and their provider sets, then regenerate Wire code with `make wire`.
+The injector calls `config.Load(configPath)` and uses `repository.NewDatabase`
+from the shared repository provider set to open and migrate the database.
+`testutil.New` registers Wire's cleanup with the test. Configuration loading,
+validation, and database initialization are shared with the server.
+
+All tests read `deployments/server.toml` relative to the project root. The shared
+`configPath` constant lives in `internal/testutil/dependencies.go`. The helper
+walks upward from the test package directory to locate `go.mod`, then passes an
+absolute configuration path to Wire without changing the working directory.
+Set `database.driver` and `database.dsn` in that file to select PostgreSQL, MySQL,
+or SQLite.
+
+```bash
+make test
+make test TEST_ARGS='-run TestUserServiceRegister -v'
+```
+
+Tests use fixed fixture values and write directly to the selected database.
+Database timestamp precision can vary by driver, so timestamp assertions account
+for fractional-second truncation.
 
 ## CLI Releases
 
