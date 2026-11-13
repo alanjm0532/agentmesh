@@ -278,8 +278,8 @@ addr = "127.0.0.1:8080"
 mode = "debug"
 
 [database]
-driver = "sqlite"
-dsn = "file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)"
+driver = "postgres"
+dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable"
 ```
 
 `server.mode` supports `debug`, `release`, and `test`. Configuration is validated by `Config.Validate()`.
