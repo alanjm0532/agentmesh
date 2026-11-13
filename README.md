@@ -39,6 +39,7 @@ agentmesh/
 │   └── cli.toml                # Example CLI configuration
 ├── go.mod
 ├── go.sum
+├── Dockerfile                  # Multi-stage server image build
 ├── Makefile
 └── README.md
 ```
@@ -212,6 +213,27 @@ make run ARGS="-config /path/to/server.toml"
 The server uses Zap at the `info` level by default and writes logs to stdout.
 The `release` mode uses JSON encoding; `debug` and `test` use console encoding.
 Gin request and recovery logs use `gin-contrib/zap`. The cleanup function returned by Wire flushes the logger.
+
+### Run the server with Docker
+
+Prepare an external server TOML configuration with `server.addr` set to
+`0.0.0.0:8080` and `server.mode` set to `release`, then build and start the server
+from the repository root:
+
+```bash
+docker build -t agentmesh-server .
+docker run --rm --name agentmesh-server -p 8080:8080 \
+  -v "/path/to/server.toml:/app/deployments/server.toml:ro" \
+  agentmesh-server
+```
+
+The Dockerfile generates Wire code and builds the server with Go 1.27.4.
+The runtime image runs as a non-root user and reads the configuration mounted at
+`/app/deployments/server.toml` at startup. Configuration files are excluded from
+the build context.
+
+Replace `/path/to/server.toml` with the absolute path to your configuration file.
+Check the running server with `curl http://127.0.0.1:8080/ping`.
 
 ## Build and Development Commands
 
