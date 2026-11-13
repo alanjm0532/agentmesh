@@ -29,9 +29,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Install dependencies and golangci-lint
-        run: |
-          make init
-          golangci-lint version
+        run: make init
 
       - name: Run lint
         run: make lint

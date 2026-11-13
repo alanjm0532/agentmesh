@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  cli:
+    name: Release CLI
+    needs: lint
+    uses: ./.github/workflows/release-cli.yml
+    permissions:
+      contents: write
+
+  server:
+    name: Release Server Image
+    needs: lint
+    uses: ./.github/workflows/release-server.yml
+    permissions:
+      contents: read
+      packages: write
