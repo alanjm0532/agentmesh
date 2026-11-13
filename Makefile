@@ -9,7 +9,7 @@ VERSION ?= latest
 
 init: ## Download project dependencies and install golangci-lint
 	$(GO) mod download
-	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.1
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 
 wire: ## Generate Wire dependency injection code
 	$(GO) tool wire ./internal/server
