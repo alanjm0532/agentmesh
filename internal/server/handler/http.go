@@ -16,10 +16,11 @@ import (
 
 type Handler struct {
 	helloService *service.HelloService
+	userService  *service.UserService
 }
 
-func NewHandler(helloService *service.HelloService) *Handler {
-	return &Handler{helloService: helloService}
+func NewHandler(helloService *service.HelloService, userService *service.UserService) *Handler {
+	return &Handler{helloService: helloService, userService: userService}
 }
 
 func NewRouter(config config.Config, h *Handler, logger *zap.Logger) *gin.Engine {
@@ -50,6 +51,7 @@ func (h *Handler) registerWebRoutes(router *gin.Engine) {
 	web := router.Group("/web")
 	web.GET("/ping", h.webPing)
 	web.GET("/hello", h.hello)
+	web.POST(protocol.RegisterPath, h.register)
 }
 
 func (h *Handler) registerAPIRoutes(router *gin.Engine) {

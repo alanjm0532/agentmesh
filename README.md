@@ -19,6 +19,7 @@ agentmesh/
 │   │   ├── logger.go           # Zap logger initialization
 │   │   ├── wire.go             # Wire dependency injection declarations
 │   │   ├── config/             # Server configuration loading with Viper
+│   │   ├── ent/schema/         # Ent database schemas
 │   │   ├── handler/            # Gin routes and HTTP handlers
 │   │   ├── service/            # Business logic
 │   │   ├── repository/         # Data access layer
@@ -55,6 +56,8 @@ Both the server and CLI import `github.com/alanjm0532/agentmesh/pkg/protocol`.
 | Configuration | Viper |
 | HTTP requests | `github.com/go-resty/resty/v2` |
 | JSON | `encoding/json` |
+| Database ORM | Ent (MySQL, PostgreSQL, SQLite) |
+| Password hashing | `golang.org/x/crypto/bcrypt` |
 
 Use English for documentation, source comments, CLI help, output, errors, and logs.
 The web frontend supports English and Simplified Chinese. See [agent.md](agent.md) for project conventions.
@@ -189,6 +192,7 @@ The server provides these endpoints:
 - `GET /login.html`: configures an existing Bearer token for the browser session.
 - `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
 - `GET /api/ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
+- `POST /web/register`: registers a user and returns an access token.
 - `GET /web/ping`: returns `{"message":"pong"}` from the frontend route group.
 - `GET /web/hello?name=Alan`: returns `{"message":"Hello, Alan!"}` for the page's greeting form.
 
@@ -256,8 +260,9 @@ The responsive navigation and footer link to
 their selected state with `aria-pressed`; appearance buttons include localized
 labels and tooltips. Icons are served from a local SVG sprite.
 
-The `/web/hello`, `/web/ping`, and `/api/ping` endpoints are public. There is no login or token
-issuance API. The API access page stores an existing token in `sessionStorage`
+The `/web/hello`, `/web/ping`, `/api/ping`, and `/web/register` endpoints are public.
+Registration issues an access token; login and token authentication are not yet implemented.
+The API access page stores an existing token in `sessionStorage`
 for deployments that require it; saving a token does not validate it. API requests
 include the configured token, and HTTP 401 responses clear it. Add business API
 modules as backend endpoints become available.
@@ -271,10 +276,47 @@ The server reads `deployments/server.toml` relative to the working directory by 
 [server]
 addr = "127.0.0.1:8080"
 mode = "debug"
+
+[database]
+driver = "sqlite"
+dsn = "file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)"
 ```
 
 `server.mode` supports `debug`, `release`, and `test`. Configuration is validated by `Config.Validate()`.
 After changing the listening address, update `server` in the CLI configuration accordingly.
+
+Set `database.driver` and `database.dsn` to select the database:
+
+| Driver | Example DSN |
+| --- | --- |
+| `sqlite` | `file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)` |
+| `mysql` | `agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC` |
+| `postgres` | `postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable` |
+
+The MySQL or PostgreSQL database must already exist. The server creates the Ent
+schema on startup and closes the database during dependency cleanup. SQLite uses
+the pure Go `modernc.org/sqlite` driver, including in the CGO-disabled Docker build.
+Its database path is relative to the server's working directory. When using SQLite
+in Docker, mount a writable data directory and point the DSN to a file inside it.
+For a SQLite in-memory database, use `file::memory:?cache=shared&_pragma=foreign_keys(1)`.
+
+The `users` table contains `id` (UUIDv7 primary key), `username` (unique), `password`
+(bcrypt hash), `access_token` (unique), `created_at`, and `updated_at`. Ent sets
+timestamps on creation and refreshes `updated_at` for Ent updates. Username
+uniqueness is enforced by the database, including concurrent registrations; text
+comparison follows the selected database's collation. Passwords are hashed using
+`bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)` before insertion.
+Each registration generates a random 256-bit access token. Registration responses
+include the user ID, username, token, and timestamps, and omit the password hash.
+
+```bash
+curl -X POST http://127.0.0.1:8080/web/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alan","password":"my-password"}'
+```
+
+Successful registration returns HTTP 201. Duplicate usernames return HTTP 409.
+Malformed JSON and passwords exceeding bcrypt's 72-byte limit return HTTP 400.
 
 Use `-config` to specify a server configuration file:
 
@@ -289,7 +331,7 @@ The `release` mode uses JSON encoding; `debug` and `test` use console encoding.
 Gin request and recovery logs use `gin-contrib/zap`. Access logs skip `/static`,
 `/static/*`, and `/favicon.ico`; page and API requests are still logged.
 Panic recovery logging remains enabled for every route.
-The cleanup function returned by Wire flushes the logger.
+The cleanup function returned by Wire closes the database and flushes the logger.
 
 ### Run the server with Docker
 
@@ -304,7 +346,7 @@ docker run --rm --name agentmesh-server -p 8080:8080 \
   agentmesh-server
 ```
 
-The Dockerfile generates Wire code and builds the server with Go 1.27.4.
+The Dockerfile generates Ent and Wire code and builds the server with Go 1.27.4.
 The runtime image runs as a non-root user and reads the configuration mounted at
 `/app/deployments/server.toml` at startup. Configuration files are excluded from
 the build context.
@@ -343,14 +385,15 @@ docker run --rm --name agentmesh-server -p 8080:8080 \
 make init         # Download project dependencies and install golangci-lint
 make build-cli    # Build the CLI: bin/agentmesh
 make build-cli VERSION=v0.1.0 # Embed a CLI release version
-make build-server # Generate Wire code and build the server: bin/agentmesh-server
+make build-server # Generate Ent and Wire code and build the server: bin/agentmesh-server
 make build        # Build the CLI and HTTP server
-make run          # Generate Wire code and start the HTTP server
+make run          # Generate Ent and Wire code and start the HTTP server
 make run-cli ARGS="--config /path/to/cli.toml ping"
-make wire         # Generate the server's wire_gen.go
-make generate     # Generate project code (Wire)
+make ent          # Generate Ent code from internal/server/ent/schema
+make wire         # Generate Ent code and the server's wire_gen.go
+make generate     # Generate project code (Ent and Wire)
 make fmt          # Format Go code
-make lint         # Generate Wire code and run golangci-lint
+make lint         # Generate Ent and Wire code and run golangci-lint
 make help         # Show available commands
 ```
 
@@ -368,10 +411,11 @@ Use the compiled CLI:
 ./bin/agentmesh --config /path/to/cli.toml ping
 ```
 
-Wire is managed through the `tool` directive in `go.mod`; no global installation is required.
+Ent and Wire are managed through `tool` directives in `go.mod`; no global installation is required.
 After changing server dependencies, run `make wire` to generate `internal/server/wire_gen.go`.
-Generate Wire code before running `go run ./cmd/server` directly as well.
-`wire_gen.go` and `bin/` build artifacts are ignored by Git. Do not edit generated files manually.
+Generate Ent and Wire code before running `go run ./cmd/server` directly as well.
+Ent output, `wire_gen.go`, and `bin/` build artifacts are ignored by Git. Keep Ent
+schema sources under `internal/server/ent/schema/`; do not edit generated files manually.
 
 ## CLI Releases
 

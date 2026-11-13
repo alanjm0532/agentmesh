@@ -14,6 +14,15 @@ bin/
 # Wire generated code
 wire_gen.go
 
+# Ent generated code (keep schema sources)
+/internal/server/ent/*
+!/internal/server/ent/schema/
+
+# Local SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
 # Test binary, built with `go test -c`
 *.test
 

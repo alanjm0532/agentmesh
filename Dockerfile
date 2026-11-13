@@ -7,6 +7,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+RUN go tool ent generate ./internal/server/ent/schema
 RUN go tool wire ./internal/server
 RUN go build -mod=readonly -trimpath -ldflags="-s -w" -o /out/agentmesh-server ./cmd/server
 

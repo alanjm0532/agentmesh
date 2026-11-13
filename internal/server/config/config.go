@@ -10,12 +10,18 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `mapstructure:"server"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Database DatabaseConfig `mapstructure:"database"`
 }
 
 type ServerConfig struct {
 	Addr string `mapstructure:"addr" validate:"notblank"`
 	Mode string `mapstructure:"mode" validate:"oneof=debug release test"`
+}
+
+type DatabaseConfig struct {
+	Driver string `mapstructure:"driver" validate:"oneof=mysql postgres sqlite"`
+	DSN    string `mapstructure:"dsn"`
 }
 
 func (c Config) Validate() error {
