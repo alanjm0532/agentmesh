@@ -199,11 +199,10 @@ Building and running the CLI does not require server configuration or Wire gener
 The server provides these endpoints:
 
 - `GET /`: serves the AgentMesh homepage with the current account entry.
-- `GET /login.html`: registers an account, logs in, and shows the current session.
+- `GET /login.html`: logs in and shows the current session, creating new accounts automatically.
 - `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
 - `GET /api/ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
-- `POST /web/register`: registers a user, establishes a Cookie Session, and returns an access token.
-- `POST /web/login`: verifies a username and password and establishes a Cookie Session.
+- `POST /web/login`: verifies an existing account or creates one if the username does not exist, then establishes a Cookie Session.
 - `POST /web/logout`: clears and saves the current session.
 - `GET /web/profile`: returns the current user; missing or invalid sessions receive HTTP 401.
 
@@ -226,7 +225,7 @@ Docker image needs no separate static asset copy or CDN access at runtime.
 ```text
 internal/server/handler/static/
 ├── index.html                  # View: homepage and current account entry
-├── login.html                  # View: registration, login, and current account
+├── login.html                  # View: login and current account
 ├── css/app.css                 # Application styles
 ├── images/                     # Brand artwork, favicons, and SVG icon sprite
 ├── js/
@@ -267,15 +266,15 @@ The responsive navigation and footer link to
 their selected state with `aria-pressed`; appearance buttons include localized
 labels and tooltips. Icons are served from a local SVG sprite.
 
-The `/api/ping`, `/web/register`, and `/web/login`
-endpoints are public. Registration and login use `gin-contrib/sessions` with a
+The `/api/ping` and `/web/login`
+endpoints are public. Login uses `gin-contrib/sessions` with a
 cookie store. The signed `agentmesh_session` cookie contains only the user ID,
 uses `HttpOnly` and `SameSite=Lax`, is scoped to `/web`, and expires after one day.
-The account page checks `/web/profile` on load and after registration or login
-to confirm the browser session. Successful registration or login then redirects
+The account page checks `/web/profile` on load and after login
+to confirm the browser session. Successful login then redirects
 to the homepage. Logout clears the session and saves it.
-Web requests send same-origin cookies automatically. The issued access token is
-retained for API use; Bearer token authentication is not implemented.
+Web requests send same-origin cookies automatically. The generated access token is
+stored for future API use; Bearer token authentication is not implemented.
 Protect additional Web routes with `middleware.SessionAuth()`.
 
 Edit files directly under `static/`; changes take effect with the next server
@@ -319,7 +318,7 @@ in Docker, mount a writable data directory and point the DSN to a file inside it
 For a SQLite in-memory database, use `file::memory:?cache=shared&_pragma=foreign_keys(1)&_timezone=UTC`.
 
 Database timestamps use UTC. Ent generates creation and update times through
-`util.NowUTC`, and registration responses serialize them with the `Z` UTC suffix.
+`util.NowUTC`, and login responses serialize them with the `Z` UTC suffix.
 Database connectors enforce UTC for every new connection, overriding conflicting
 DSN time zones: PostgreSQL uses the `timezone=UTC` startup parameter; MySQL uses
 `parseTime=true`, driver location `UTC`, and session `time_zone='+00:00'`; SQLite
@@ -335,20 +334,23 @@ zones need a separate data migration based on their original time zone.
 The `users` table contains `id` (UUIDv7 primary key), `username` (unique), `password`
 (bcrypt hash), `access_token` (unique), `created_at`, and `updated_at`. Ent sets
 timestamps on creation and refreshes `updated_at` for Ent updates. Username
-uniqueness is enforced by the database, including concurrent registrations; text
+uniqueness is enforced by the database, including concurrent first logins; text
 comparison follows the selected database's collation. Passwords are hashed using
 `bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)` before insertion.
-Each registration uses `util.GenerateToken` to generate an access token with the
-`agentmesh_` prefix followed by 64 hexadecimal characters (256 random bits). Registration responses
-include the user ID, username, token, and timestamps, and omit the password hash.
+Each new account uses `util.GenerateToken` to generate an access token with the
+`agentmesh_` prefix followed by 64 hexadecimal characters (256 random bits). Login responses
+include the user ID, username, and timestamps, and omit the password hash and access token.
+Existing accounts require the correct password; concurrent first logins verify the password
+of the account that was created first.
 
 ```bash
-curl -X POST http://127.0.0.1:8080/web/register \
+curl -X POST http://127.0.0.1:8080/web/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"alan","password":"my-password"}'
 ```
 
-Successful registration returns HTTP 201. Duplicate usernames return HTTP 409.
+Successful login returns HTTP 200, including when an account is created automatically.
+An incorrect password for an existing username returns HTTP 401.
 Malformed JSON and passwords exceeding bcrypt's 72-byte limit return HTTP 400.
 
 Use `-config` to specify a server configuration file:
@@ -459,7 +461,7 @@ It exposes the Ent client, repositories, and services through `Dependencies`:
 
 ```go
 deps := testutil.New(t)
-registered, err := deps.UserService.Register(ctx, username, password)
+loggedIn, err := deps.UserService.Login(ctx, username, password)
 ```
 
 Database connections close automatically after each test. New tests can use these dependencies without
@@ -479,10 +481,10 @@ or SQLite.
 
 ```bash
 make test
-make test TEST_ARGS='-run TestUserServiceRegister -v'
+make test TEST_ARGS='-run TestUserServiceLogin -v'
 ```
 
-Tests use fixed fixture values and write directly to the selected database.
+Tests use unique account usernames and write directly to the selected database.
 Database timestamp precision can vary by driver, so timestamp assertions account
 for fractional-second truncation.
 

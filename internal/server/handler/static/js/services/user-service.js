@@ -1,11 +1,7 @@
-import { fetchProfile, loginUser, logoutUser, registerUser } from '../api/user-api.js';
+import { fetchProfile, loginUser, logoutUser } from '../api/user-api.js';
 
-export async function authenticate(credentials, registering) {
-    if (registering) {
-        await registerUser(credentials);
-    } else {
-        await loginUser(credentials);
-    }
+export async function authenticate(credentials) {
+    await loginUser(credentials);
     // Confirm that the browser accepted the session cookie before showing success.
     return fetchProfile();
 }

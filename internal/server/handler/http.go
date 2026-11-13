@@ -59,7 +59,6 @@ func (h *Handler) registerWebRoutes(router *gin.Engine, store sessions.Store) {
 
 	web := router.Group("/web")
 	web.Use(sessions.Sessions("agentmesh_session", store))
-	web.POST("/register", h.register)
 	web.POST("/login", h.login)
 	web.POST("/logout", h.logout)
 	web.GET("/profile", middleware.SessionAuth(), h.profile)

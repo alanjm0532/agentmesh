@@ -38,8 +38,8 @@
         <header class="access-heading">
             <div class="access-symbol" aria-hidden="true"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg></div>
             <p class="eyebrow" data-i18n="access.eyebrow">YOUR ACCOUNT</p>
-            <h1 class="access-title" data-i18n="access.heading">Join AgentMesh</h1>
-            <p class="access-description" data-i18n="access.intro">Create an account or log in to continue.</p>
+            <h1 class="access-title" data-i18n="access.heading">Log in to AgentMesh</h1>
+            <p class="access-description" data-i18n="access.intro">Log in to continue. New accounts are created automatically.</p>
         </header>
         <div id="notice" class="alert d-none" role="alert"></div>
         <section class="token-card" aria-label="Account" data-i18n-aria-label="access.settings">
@@ -49,11 +49,10 @@
                 <label class="form-label" for="username" data-i18n="access.username">Username</label>
                 <input id="username" name="username" class="form-control mb-3" autocomplete="username" spellcheck="false" disabled>
                 <label class="form-label" for="password" data-i18n="access.password">Password</label>
-                <input id="password" name="password" type="password" class="form-control" autocomplete="new-password" aria-describedby="auth-help" disabled>
-                <div class="token-help"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg><p id="auth-help" data-i18n="access.help">You will be logged in automatically after registration. Passwords support up to 72 bytes.</p></div>
+                <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" aria-describedby="auth-help" disabled>
+                <div class="token-help"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg><p id="auth-help" data-i18n="access.help">If your username does not exist, an account will be created automatically. Passwords support up to 72 bytes.</p></div>
                 <div class="token-actions">
-                    <button id="auth-submit" class="btn action-primary" type="submit" data-i18n="access.register" disabled>Create account</button>
-                    <button id="auth-switch" class="btn action-secondary" type="button" data-i18n="access.toLogin" disabled>Already have an account? Log in</button>
+                    <button id="auth-submit" class="btn action-primary" type="submit" data-i18n="access.login" disabled>Log in</button>
                 </div>
             </form>
             <button id="auth-logout" class="btn action-secondary" type="button" data-i18n="access.logout" hidden disabled>Log out</button>

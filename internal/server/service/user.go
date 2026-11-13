@@ -21,7 +21,7 @@ func NewUserService(users *repository.UserRepository) *UserService {
 	return &UserService{users: users}
 }
 
-func (s *UserService) Register(ctx context.Context, username, password string) (*ent.User, error) {
+func (s *UserService) createUser(ctx context.Context, username, password string) (*ent.User, error) {
 	// Persist only the bcrypt hash, using the default bcrypt cost.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -36,9 +36,23 @@ func (s *UserService) Register(ctx context.Context, username, password string) (
 }
 
 func (s *UserService) Login(ctx context.Context, username, password string) (*ent.User, error) {
+	if len(password) > 72 {
+		return nil, bcrypt.ErrPasswordTooLong
+	}
 	user, err := s.users.GetByUsername(ctx, username)
 	if ent.IsNotFound(err) {
-		return nil, ErrInvalidCredentials
+		user, err = s.createUser(ctx, username, password)
+		if err == nil {
+			return user, nil
+		}
+		if ent.IsConstraintError(err) {
+			// A concurrent login may have created this username first.
+			// Verify its password before allowing access to that account.
+			existing, lookupErr := s.users.GetByUsername(ctx, username)
+			if lookupErr == nil {
+				user, err = existing, nil
+			}
+		}
 	}
 	if err != nil {
 		return nil, err

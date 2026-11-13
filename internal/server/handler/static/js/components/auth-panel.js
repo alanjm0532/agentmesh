@@ -5,11 +5,7 @@ import { setText } from '../utils/i18n.js';
 export async function initAuthPanel() {
     const form = document.getElementById('auth-form');
     const status = document.getElementById('auth-status');
-    const password = document.getElementById('password');
-    const submit = document.getElementById('auth-submit');
-    const switchMode = document.getElementById('auth-switch');
     const logoutButton = document.getElementById('auth-logout');
-    let registering = true;
 
     function setBusy(busy) {
         form.setAttribute('aria-busy', String(busy));
@@ -35,7 +31,7 @@ export async function initAuthPanel() {
             await authenticate({
                 username: data.get('username'),
                 password: data.get('password'),
-            }, registering);
+            });
             form.reset();
             window.location.replace('/');
         } catch (error) {
@@ -43,14 +39,6 @@ export async function initAuthPanel() {
         } finally {
             setBusy(false);
         }
-    });
-
-    switchMode.addEventListener('click', () => {
-        registering = !registering;
-        password.autocomplete = registering ? 'new-password' : 'current-password';
-        setText(submit, registering ? 'access.register' : 'access.login');
-        setText(switchMode, registering ? 'access.toLogin' : 'access.toRegister');
-        clearNotice();
     });
 
     logoutButton.addEventListener('click', async () => {

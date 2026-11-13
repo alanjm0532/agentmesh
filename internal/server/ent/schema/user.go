@@ -17,7 +17,7 @@ func (User) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(func() uuid.UUID { return uuid.Must(uuid.NewV7()) }).
 			Immutable(),
-		// Let the database enforce uniqueness, including concurrent registrations.
+		// Let the database enforce uniqueness, including concurrent first logins.
 		field.String("username").Unique(),
 		field.String("password").Sensitive(),
 		field.String("access_token").Unique().Sensitive(),
