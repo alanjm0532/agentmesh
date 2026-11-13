@@ -1,6 +1,8 @@
 import { clearToken, getAuthHeaders } from '../utils/storage.js';
 import { t } from '../utils/i18n.js';
 
+const webPrefix = '/web';
+
 export class ApiError extends Error {
     constructor(key, status = 0) {
         super(t(key, { status }));
@@ -14,7 +16,7 @@ export class ApiError extends Error {
 async function request(path, options) {
     let response;
     try {
-        response = await fetch(path, {
+        response = await fetch(`${webPrefix}${path}`, {
             ...options,
             credentials: 'same-origin',
             headers: {

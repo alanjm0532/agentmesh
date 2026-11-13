@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/alanjm0532/agentmesh/internal/server/config"
@@ -27,16 +28,40 @@ func NewRouter(config config.Config, h *Handler, logger *zap.Logger) *gin.Engine
 	_ = router.SetTrustedProxies(nil)
 	router.Use(
 		middleware.RequestID(),
-		ginzap.Ginzap(logger, time.RFC3339, true),
+		ginzap.GinzapWithConfig(logger, &ginzap.Config{
+			TimeFormat: time.RFC3339,
+			UTC:        true,
+			SkipPaths:  []string{"/favicon.ico"},
+			SkipPathRegexps: []*regexp.Regexp{
+				regexp.MustCompile(`^/static(/|$)`),
+			},
+		}),
 		ginzap.RecoveryWithZap(logger, true),
 	)
-	registerStatic(router)
-	router.GET(protocol.PingPath, h.ping)
-	router.GET("/hello", h.hello)
+	h.registerWebRoutes(router)
+	h.registerAPIRoutes(router)
 	return router
 }
 
-func (h *Handler) ping(c *gin.Context) {
+func (h *Handler) registerWebRoutes(router *gin.Engine) {
+	pages := router.Group("/")
+	registerPages(pages)
+
+	web := router.Group("/web")
+	web.GET("/ping", h.webPing)
+	web.GET("/hello", h.hello)
+}
+
+func (h *Handler) registerAPIRoutes(router *gin.Engine) {
+	api := router.Group(protocol.APIPrefix)
+	api.GET(protocol.PingPath, h.apiPing)
+}
+
+func (h *Handler) apiPing(c *gin.Context) {
+	c.JSON(http.StatusOK, protocol.PingResponse{Message: "pong"})
+}
+
+func (h *Handler) webPing(c *gin.Context) {
 	c.JSON(http.StatusOK, protocol.PingResponse{Message: "pong"})
 }
 

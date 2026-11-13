@@ -11,7 +11,7 @@ import (
 //go:embed static
 var staticFiles embed.FS
 
-func registerStatic(router *gin.Engine) {
+func registerPages(pages *gin.RouterGroup) {
 	files, err := fs.Sub(staticFiles, "static")
 	if err != nil {
 		panic(err)
@@ -19,8 +19,8 @@ func registerStatic(router *gin.Engine) {
 
 	assets := http.FS(files)
 	// Serve the directory to avoid net/http redirecting index.html back to /.
-	router.StaticFileFS("/", "/", assets)
-	router.StaticFileFS("/login.html", "login.html", assets)
-	router.StaticFileFS("/favicon.ico", "images/favicon.ico", assets)
-	router.StaticFS("/static", assets)
+	pages.StaticFileFS("/", "/", assets)
+	pages.StaticFileFS("/login.html", "login.html", assets)
+	pages.StaticFileFS("/favicon.ico", "images/favicon.ico", assets)
+	pages.StaticFS("/static", assets)
 }

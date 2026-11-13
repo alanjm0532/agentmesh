@@ -30,6 +30,7 @@ agentmesh/
 │       └── util/               # Shared CLI helpers
 ├── pkg/
 │   └── protocol/               # AgentMesh Protocol shared by server and CLI
+│       ├── routes.go           # Shared API route prefix
 │       ├── ping.go             # PingResponse
 │       └── hello.go            # HelloRequest, HelloResponse
 ├── migrations/                 # Reserved for database migrations
@@ -187,12 +188,20 @@ The server provides these endpoints:
 - `GET /`: serves the Hello World page with a greeting form.
 - `GET /login.html`: configures an existing Bearer token for the browser session.
 - `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
-- `GET /ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
-- `GET /hello?name=Alan`: returns `{"message":"Hello, Alan!"}`.
+- `GET /api/ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
+- `GET /web/ping`: returns `{"message":"pong"}` from the frontend route group.
+- `GET /web/hello?name=Alan`: returns `{"message":"Hello, Alan!"}` for the page's greeting form.
+
+Page and static asset routes are registered in the `/` group. Frontend endpoints
+use the `/web` group, and CLI endpoints use the `/api` group. The two ping routes
+have separate handlers. Each HTTP client adds its own route prefix centrally;
+configure the CLI with the server's root URL. The page does not automatically
+call the frontend ping endpoint.
 
 ```bash
-curl http://127.0.0.1:8080/ping
-curl 'http://127.0.0.1:8080/hello?name=Alan'
+curl http://127.0.0.1:8080/api/ping
+curl http://127.0.0.1:8080/web/ping
+curl 'http://127.0.0.1:8080/web/hello?name=Alan'
 ```
 
 ### Web frontend
@@ -247,7 +256,7 @@ The responsive navigation and footer link to
 their selected state with `aria-pressed`; appearance buttons include localized
 labels and tooltips. Icons are served from a local SVG sprite.
 
-The existing `/hello` and `/ping` APIs remain public. There is no login or token
+The `/web/hello`, `/web/ping`, and `/api/ping` endpoints are public. There is no login or token
 issuance API. The API access page stores an existing token in `sessionStorage`
 for deployments that require it; saving a token does not validate it. API requests
 include the configured token, and HTTP 401 responses clear it. Add business API
@@ -277,7 +286,10 @@ make run ARGS="-config /path/to/server.toml"
 
 The server uses Zap at the `info` level by default and writes logs to stdout.
 The `release` mode uses JSON encoding; `debug` and `test` use console encoding.
-Gin request and recovery logs use `gin-contrib/zap`. The cleanup function returned by Wire flushes the logger.
+Gin request and recovery logs use `gin-contrib/zap`. Access logs skip `/static`,
+`/static/*`, and `/favicon.ico`; page and API requests are still logged.
+Panic recovery logging remains enabled for every route.
+The cleanup function returned by Wire flushes the logger.
 
 ### Run the server with Docker
 
@@ -298,7 +310,7 @@ The runtime image runs as a non-root user and reads the configuration mounted at
 the build context.
 
 Replace `/path/to/server.toml` with the absolute path to your configuration file.
-Check the running server with `curl http://127.0.0.1:8080/ping`.
+Check the running server with `curl http://127.0.0.1:8080/api/ping`.
 
 ### Server image releases
 

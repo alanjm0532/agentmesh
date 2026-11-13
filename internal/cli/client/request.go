@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/alanjm0532/agentmesh/pkg/protocol"
 )
 
 func doRequest[T any](ctx context.Context, c *Client, method, path string) (T, error) {
 	var zero T
+	path = protocol.APIPrefix + path
 	endpoint := c.http.BaseURL + path
 	resp, err := c.http.R().
 		SetContext(ctx).
