@@ -272,7 +272,8 @@ endpoints are public. Registration and login use `gin-contrib/sessions` with a
 cookie store. The signed `agentmesh_session` cookie contains only the user ID,
 uses `HttpOnly` and `SameSite=Lax`, is scoped to `/web`, and expires after one day.
 The account page checks `/web/profile` on load and after registration or login
-to confirm the browser session. Logout clears the session and saves it.
+to confirm the browser session. Successful registration or login then redirects
+to the homepage. Logout clears the session and saves it.
 Web requests send same-origin cookies automatically. The issued access token is
 retained for API use; Bearer token authentication is not implemented.
 Protect additional Web routes with `middleware.SessionAuth()`.

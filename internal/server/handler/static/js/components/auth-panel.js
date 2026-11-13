@@ -32,13 +32,12 @@ export async function initAuthPanel() {
         const data = new FormData(form);
         setBusy(true);
         try {
-            const user = await authenticate({
+            await authenticate({
                 username: data.get('username'),
                 password: data.get('password'),
             }, registering);
             form.reset();
-            renderUser(user);
-            showNotice(registering ? 'access.registered' : 'access.loggedIn', 'success');
+            window.location.replace('/');
         } catch (error) {
             showNotice(error.key, 'danger', error.params);
         } finally {
