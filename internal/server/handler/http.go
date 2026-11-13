@@ -24,6 +24,7 @@ func NewHandler(helloService *service.HelloService) *Handler {
 func NewRouter(config config.Config, h *Handler, logger *zap.Logger) *gin.Engine {
 	gin.SetMode(config.Server.Mode)
 	router := gin.New()
+	_ = router.SetTrustedProxies(nil)
 	router.Use(
 		middleware.RequestID(),
 		ginzap.Ginzap(logger, time.RFC3339, true),
