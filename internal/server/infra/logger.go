@@ -1,4 +1,4 @@
-package server
+package infra
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func newLogger(config config.Config) (*zap.Logger, func(), error) {
+func NewLogger(config config.Config) (*zap.Logger, func(), error) {
 	// Configure logging for the server mode and provide a cleanup function to Wire.
 	logConfig := zap.NewProductionConfig()
 	logConfig.OutputPaths = []string{"stdout"}

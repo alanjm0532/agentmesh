@@ -58,7 +58,7 @@ func (s *UserService) Login(ctx context.Context, username, password string) (*en
 		return nil, err
 	}
 	// Verify the submitted password against the persisted bcrypt hash.
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 	return user, nil

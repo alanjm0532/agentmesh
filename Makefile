@@ -16,7 +16,7 @@ ent: ## Generate Ent database access and migration code
 	$(GO) tool ent generate ./internal/server/ent/schema
 
 wire: ent ## Generate Ent and Wire dependency injection code for the server and tests
-	$(GO) tool wire ./internal/server ./internal/testutil
+	$(GO) tool wire ./internal/server ./internal/test
 
 generate: wire ## Generate project code (Ent and Wire)
 

@@ -4,6 +4,7 @@ package testutil
 
 import (
 	"github.com/alanjm0532/agentmesh/internal/server/config"
+	"github.com/alanjm0532/agentmesh/internal/server/infra"
 	"github.com/alanjm0532/agentmesh/internal/server/repository"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
 	"github.com/google/wire"
@@ -13,6 +14,7 @@ func initialize(configPath string) (*Dependencies, func(), error) {
 	// Reuse business providers with the test database connection.
 	panic(wire.Build(
 		config.Load,
+		infra.NewDatabase,
 		repository.ProviderSet,
 		service.ProviderSet,
 		wire.Struct(new(Dependencies), "*"),
