@@ -15,7 +15,6 @@ type Dependencies struct {
 	Client         *ent.Client
 	UserRepository *repository.UserRepository
 	UserService    *service.UserService
-	HelloService   *service.HelloService
 }
 
 func New(t testing.TB) *Dependencies {

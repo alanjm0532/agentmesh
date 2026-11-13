@@ -15,8 +15,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Addr string `mapstructure:"addr" validate:"notblank"`
-	Mode string `mapstructure:"mode" validate:"oneof=debug release test"`
+	Addr          string `mapstructure:"addr" validate:"notblank"`
+	Mode          string `mapstructure:"mode" validate:"oneof=debug release test"`
+	SessionSecret string `mapstructure:"session_secret" validate:"min=32"`
+	SessionSecure bool   `mapstructure:"session_secure"`
 }
 
 type DatabaseConfig struct {

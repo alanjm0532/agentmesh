@@ -1,6 +1,10 @@
 [server]
 addr = "127.0.0.1:8080"
 mode = "debug"
+# Replace with a random secret of at least 32 characters and keep it private.
+session_secret = "replace-with-a-random-secret-at-least-32-characters"
+# Enable when the browser connects over HTTPS.
+session_secure = false
 
 [database]
 # Connections and application timestamps always use UTC, overriding conflicting DSN time zones.

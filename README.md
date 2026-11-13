@@ -32,8 +32,7 @@ agentmesh/
 ├── pkg/
 │   └── protocol/               # AgentMesh Protocol shared by server and CLI
 │       ├── routes.go           # Shared API route prefix
-│       ├── ping.go             # PingResponse
-│       └── hello.go            # HelloRequest, HelloResponse
+│       └── ping.go             # PingResponse
 ├── migrations/                 # Reserved for database migrations
 ├── docs/
 │   ├── config/                 # Server and CLI configuration examples
@@ -49,8 +48,9 @@ agentmesh/
 └── README.md
 ```
 
-`pkg/protocol` defines shared request and response types, route constants, and JSON fields without depending on Gin or CLI libraries.
+`pkg/protocol` defines only request and response types, route constants, and JSON fields used for server–CLI communication, without depending on Gin or CLI libraries.
 Both the server and CLI import `github.com/alanjm0532/agentmesh/pkg/protocol`.
+Web-only request and response types stay in `internal/server/handler`; Web routes are defined inside `internal/server`.
 
 | Feature | Go Library |
 | --- | --- |
@@ -198,24 +198,21 @@ Building and running the CLI does not require server configuration or Wire gener
 
 The server provides these endpoints:
 
-- `GET /`: serves the Hello World page with a greeting form.
-- `GET /login.html`: configures an existing Bearer token for the browser session.
+- `GET /`: serves the AgentMesh homepage with the current account entry.
+- `GET /login.html`: registers an account, logs in, and shows the current session.
 - `GET /static/*`: serves embedded HTML, CSS, JavaScript, and local vendor assets.
 - `GET /api/ping`: returns `{"message":"pong"}`. The CLI's `ping` command calls this endpoint.
-- `POST /web/register`: registers a user and returns an access token.
-- `GET /web/ping`: returns `{"message":"pong"}` from the frontend route group.
-- `GET /web/hello?name=Alan`: returns `{"message":"Hello, Alan!"}` for the page's greeting form.
+- `POST /web/register`: registers a user, establishes a Cookie Session, and returns an access token.
+- `POST /web/login`: verifies a username and password and establishes a Cookie Session.
+- `POST /web/logout`: clears and saves the current session.
+- `GET /web/profile`: returns the current user; missing or invalid sessions receive HTTP 401.
 
 Page and static asset routes are registered in the `/` group. Frontend endpoints
-use the `/web` group, and CLI endpoints use the `/api` group. The two ping routes
-have separate handlers. Each HTTP client adds its own route prefix centrally;
-configure the CLI with the server's root URL. The page does not automatically
-call the frontend ping endpoint.
+use the `/web` group, and CLI endpoints use the `/api` group. Each HTTP client
+adds its own route prefix centrally; configure the CLI with the server's root URL.
 
 ```bash
 curl http://127.0.0.1:8080/api/ping
-curl http://127.0.0.1:8080/web/ping
-curl 'http://127.0.0.1:8080/web/hello?name=Alan'
 ```
 
 ### Web frontend
@@ -228,25 +225,25 @@ Docker image needs no separate static asset copy or CDN access at runtime.
 
 ```text
 internal/server/handler/static/
-├── index.html                  # View: greeting form
-├── login.html                  # View: optional existing API token settings
+├── index.html                  # View: homepage and current account entry
+├── login.html                  # View: registration, login, and current account
 ├── css/app.css                 # Application styles
 ├── images/                     # Brand artwork, favicons, and SVG icon sprite
 ├── js/
 │   ├── main.js                 # Home page entry point
-│   ├── access.js               # Token settings entry point
+│   ├── access.js               # Account page entry point
 │   ├── theme-init.js           # Apply saved or system theme before styles load
 │   ├── components/             # UI events and DOM rendering
 │   ├── services/               # Business logic
 │   ├── api/                    # Endpoint definitions and shared Fetch client
 │   ├── locales/                # English and Simplified Chinese translations
-│   └── utils/                  # Session storage and notification helpers
+│   └── utils/                  # Translation, theme, and notification helpers
 └── vendor/bootstrap/           # Local CSS and MIT license
 ```
 
 Page entry points initialize UI components. Components call services, which use
 API modules to access the backend. The shared HTTP client manages JSON requests,
-Bearer headers, network errors, HTTP failures, and invalid JSON responses.
+session cookies, network errors, HTTP failures, and invalid JSON responses.
 Dynamic messages are rendered with `textContent`.
 
 Both pages include English / Simplified Chinese language buttons. On the first
@@ -270,12 +267,15 @@ The responsive navigation and footer link to
 their selected state with `aria-pressed`; appearance buttons include localized
 labels and tooltips. Icons are served from a local SVG sprite.
 
-The `/web/hello`, `/web/ping`, `/api/ping`, and `/web/register` endpoints are public.
-Registration issues an access token; login and token authentication are not yet implemented.
-The API access page stores an existing token in `sessionStorage`
-for deployments that require it; saving a token does not validate it. API requests
-include the configured token, and HTTP 401 responses clear it. Add business API
-modules as backend endpoints become available.
+The `/api/ping`, `/web/register`, and `/web/login`
+endpoints are public. Registration and login use `gin-contrib/sessions` with a
+cookie store. The signed `agentmesh_session` cookie contains only the user ID,
+uses `HttpOnly` and `SameSite=Lax`, is scoped to `/web`, and expires after one day.
+The account page checks `/web/profile` on load and after registration or login
+to confirm the browser session. Logout clears the session and saves it.
+Web requests send same-origin cookies automatically. The issued access token is
+retained for API use; Bearer token authentication is not implemented.
+Protect additional Web routes with `middleware.SessionAuth()`.
 
 Edit files directly under `static/`; changes take effect with the next server
 build because the assets are embedded.
@@ -288,6 +288,8 @@ Copy a template from [docs/config](docs/config) and follow the
 [server]
 addr = "127.0.0.1:8080"
 mode = "debug"
+session_secret = "replace-with-a-random-secret-at-least-32-characters"
+session_secure = false
 
 [database]
 driver = "postgres"
@@ -295,6 +297,9 @@ dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable&ti
 ```
 
 `server.mode` supports `debug`, `release`, and `test`. Configuration is validated by `Config.Validate()`.
+Set `server.session_secret` to a private random value of at least 32 characters;
+use the same value across restarts and server instances to retain sessions.
+Set `server.session_secure = true` when the browser connects over HTTPS.
 After changing the listening address, update `server` in the CLI configuration accordingly.
 
 Set `database.driver` and `database.dsn` to select the database:

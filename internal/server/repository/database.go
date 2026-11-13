@@ -35,15 +35,27 @@ func NewDatabase(cfg config.Config) (*ent.Client, func(), error) {
 	}
 	// The connector applies UTC settings to every new connection in the pool.
 	db := sql.OpenDB(connector)
+	cleanup := func() { _ = db.Close() }
+	initialized := false
+	defer func() {
+		// Close the pool if initialization fails or panics before ownership transfers.
+		if !initialized {
+			cleanup()
+		}
+	}()
 	if cfg.Database.Driver == "sqlite" {
 		// Keep in-memory databases and SQLite writes on the same connection.
 		db.SetMaxOpenConns(1)
 	}
-	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialectName, db)))
-	cleanup := func() { _ = client.Close() }
-	if err := client.Schema.Create(context.Background()); err != nil {
-		cleanup()
+	// Each wrapper takes ownership of the same pool, so keep only its current closer.
+	sqlDriver := entsql.OpenDB(dialectName, db)
+	cleanup = func() { _ = sqlDriver.Close() }
+	client := ent.NewClient(ent.Driver(sqlDriver))
+	cleanup = func() { _ = client.Close() }
+	if err = client.Schema.Create(context.Background()); err != nil {
 		return nil, nil, fmt.Errorf("migrate database: %w", err)
 	}
+	// Wire owns the client after successful initialization and invokes its cleanup.
+	initialized = true
 	return client, cleanup, nil
 }

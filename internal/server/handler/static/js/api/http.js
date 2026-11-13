@@ -1,4 +1,3 @@
-import { clearToken, getAuthHeaders } from '../utils/storage.js';
 import { t } from '../utils/i18n.js';
 
 const webPrefix = '/web';
@@ -21,7 +20,6 @@ async function request(path, options) {
             credentials: 'same-origin',
             headers: {
                 Accept: 'application/json',
-                ...getAuthHeaders(),
                 ...options.headers,
             },
         });
@@ -30,7 +28,6 @@ async function request(path, options) {
     }
 
     if (response.status === 401) {
-        clearToken();
         throw new ApiError('error.unauthorized', 401);
     }
 
