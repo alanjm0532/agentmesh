@@ -1,10 +1,9 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
+	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +21,8 @@ func (User) Fields() []ent.Field {
 		field.String("username").Unique(),
 		field.String("password").Sensitive(),
 		field.String("access_token").Unique().Sensitive(),
-		field.Time("created_at").Default(time.Now).Immutable(),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
+		// Store timestamps in UTC regardless of the process's local time zone.
+		field.Time("created_at").Default(util.NowUTC).Immutable(),
+		field.Time("updated_at").Default(util.NowUTC).UpdateDefault(util.NowUTC),
 	}
 }

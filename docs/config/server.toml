@@ -3,18 +3,19 @@ addr = "127.0.0.1:8080"
 mode = "debug"
 
 [database]
+# Connections and application timestamps always use UTC, overriding conflicting DSN time zones.
 # Enable one driver and DSN pair at a time.
 # PostgreSQL (default)
 driver = "postgres"
-dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable"
+dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable&timezone=UTC"
 
 # MySQL
 # driver = "mysql"
-# dsn = "agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC"
+# dsn = "agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC&time_zone=%27%2B00%3A00%27"
 
 # SQLite
 # driver = "sqlite"
-# dsn = "file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)"
+# dsn = "file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_timezone=UTC"
 
 # SQLite in-memory alternative
-# dsn = "file::memory:?_pragma=foreign_keys(1)"
+# dsn = "file::memory:?_pragma=foreign_keys(1)&_timezone=UTC"

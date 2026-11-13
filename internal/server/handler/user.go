@@ -37,7 +37,7 @@ func (h *Handler) register(c *gin.Context) {
 		ID:          user.ID.String(),
 		Username:    user.Username,
 		AccessToken: user.AccessToken,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
+		CreatedAt:   user.CreatedAt.UTC(),
+		UpdatedAt:   user.UpdatedAt.UTC(),
 	})
 }

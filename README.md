@@ -291,7 +291,7 @@ mode = "debug"
 
 [database]
 driver = "postgres"
-dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable"
+dsn = "postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable&timezone=UTC"
 ```
 
 `server.mode` supports `debug`, `release`, and `test`. Configuration is validated by `Config.Validate()`.
@@ -301,16 +301,30 @@ Set `database.driver` and `database.dsn` to select the database:
 
 | Driver | Example DSN |
 | --- | --- |
-| `sqlite` | `file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)` |
-| `mysql` | `agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC` |
-| `postgres` | `postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable` |
+| `sqlite` | `file:agentmesh.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_timezone=UTC` |
+| `mysql` | `agentmesh:password@tcp(127.0.0.1:3306)/agentmesh?parseTime=true&charset=utf8mb4&loc=UTC&time_zone=%27%2B00%3A00%27` |
+| `postgres` | `postgres://agentmesh:password@127.0.0.1:5432/agentmesh?sslmode=disable&timezone=UTC` |
 
 The MySQL or PostgreSQL database must already exist. The server creates the Ent
 schema on startup and closes the database during dependency cleanup. SQLite uses
 the pure Go `modernc.org/sqlite` driver, including in the CGO-disabled Docker build.
 Its database path is relative to the server's working directory. When using SQLite
 in Docker, mount a writable data directory and point the DSN to a file inside it.
-For a SQLite in-memory database, use `file::memory:?cache=shared&_pragma=foreign_keys(1)`.
+For a SQLite in-memory database, use `file::memory:?cache=shared&_pragma=foreign_keys(1)&_timezone=UTC`.
+
+Database timestamps use UTC. Ent generates creation and update times through
+`util.NowUTC`, and registration responses serialize them with the `Z` UTC suffix.
+Database connectors enforce UTC for every new connection, overriding conflicting
+DSN time zones: PostgreSQL uses the `timezone=UTC` startup parameter; MySQL uses
+`parseTime=true`, driver location `UTC`, and session `time_zone='+00:00'`; SQLite
+uses `_timezone=UTC` to normalize timestamp reads and writes. This does not change
+the process-wide local time zone. Convert timestamps to the user's local time
+when displaying them.
+
+Existing rows are not rewritten. PostgreSQL `timestamptz` values keep their
+original instants; their display follows the querying session's time zone.
+Historical timestamps that lack an offset or were written with mismatched time
+zones need a separate data migration based on their original time zone.
 
 The `users` table contains `id` (UUIDv7 primary key), `username` (unique), `password`
 (bcrypt hash), `access_token` (unique), `created_at`, and `updated_at`. Ent sets
