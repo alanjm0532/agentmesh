@@ -12,6 +12,7 @@ import (
 )
 
 type Config struct {
+	Token   string        `mapstructure:"token"`
 	Server  string        `mapstructure:"server" validate:"required,http_url"`
 	Timeout time.Duration `mapstructure:"timeout" validate:"required,gt=0"`
 }
@@ -46,11 +47,19 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
-func Set(path, key, value string) (resultErr error) {
+func Set(path, key, value string) error {
 	if err := validateSetting(key, value); err != nil {
 		return err
 	}
+	return update(path, key, value)
+}
 
+// SaveToken saves or clears the CLI credential.
+func SaveToken(path, token string) error {
+	return update(path, "token", token)
+}
+
+func update(path, key, value string) (resultErr error) {
 	v := viper.New()
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")
