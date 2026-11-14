@@ -17,6 +17,9 @@ type Config struct {
 type ServerConfig struct {
 	Addr          string `mapstructure:"addr" validate:"notblank"`
 	Mode          string `mapstructure:"mode" validate:"oneof=debug release test"`
+	HTTPSEnabled  bool   `mapstructure:"https_enabled"`
+	TLSCertFile   string `mapstructure:"tls_cert_file" validate:"required_if=HTTPSEnabled true"`
+	TLSKeyFile    string `mapstructure:"tls_key_file" validate:"required_if=HTTPSEnabled true"`
 	SessionSecret string `mapstructure:"session_secret" validate:"min=32"`
 	SessionSecure bool   `mapstructure:"session_secure"`
 }

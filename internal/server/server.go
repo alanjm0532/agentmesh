@@ -20,6 +20,10 @@ func newServer(config config.Config, router *gin.Engine, logger *zap.Logger) *Se
 }
 
 func (s *Server) Run() error {
+	if s.config.Server.HTTPSEnabled {
+		s.logger.Info("starting HTTPS server", zap.String("addr", s.config.Server.Addr), zap.String("mode", s.config.Server.Mode))
+		return s.router.RunTLS(s.config.Server.Addr, s.config.Server.TLSCertFile, s.config.Server.TLSKeyFile)
+	}
 	s.logger.Info("starting HTTP server", zap.String("addr", s.config.Server.Addr), zap.String("mode", s.config.Server.Mode))
 	return s.router.Run(s.config.Server.Addr)
 }
@@ -34,7 +38,7 @@ func Run(configPath string) int {
 	defer cleanup()
 
 	if err = server.Run(); err != nil {
-		server.logger.Error("HTTP server stopped", zap.Error(err))
+		server.logger.Error("server stopped", zap.Error(err))
 		return 1
 	}
 	return 0

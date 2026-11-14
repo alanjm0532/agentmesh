@@ -9,3 +9,4 @@ services:
       - "8080:8080"
     volumes:
       - ./server.toml:/app/config/server.toml:ro
+      - ./certs:/app/certs:ro

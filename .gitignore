@@ -46,6 +46,7 @@ go.work.sum
 
 # Local deployment configuration
 /deployments/
+**/certs/
 
 # Editor/IDE
 .idea/
