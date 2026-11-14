@@ -23,7 +23,7 @@ export async function initAccountPanel() {
     function handleError(error) {
         if (error?.status === 401) {
             content.hidden = true;
-            window.location.replace('/login.html');
+            window.location.replace('/?page=login');
             return;
         }
         showNotice(error?.key, 'danger', error?.params);
@@ -126,7 +126,7 @@ export async function initAccountPanel() {
         try {
             const user = await currentUser();
             if (current !== revision) return;
-            if (user === null) { content.hidden = true; window.location.replace('/login.html'); return; }
+            if (user === null) { content.hidden = true; window.location.replace('/?page=login'); return; }
             setText(status, 'access.authenticated', { username: user.username });
             const tokens = await listTokens();
             if (current !== revision) return;

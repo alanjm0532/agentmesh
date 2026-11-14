@@ -1,18 +1,19 @@
 // Only the CLI authorization page is allowed as a post-login destination.
 export function authReturnURL() {
     const value = new URLSearchParams(window.location.search).get('next');
-    if (!value) return '/account.html';
+    if (!value) return '/?page=account';
     try {
         const target = new URL(value, window.location.origin);
-        if (target.origin === window.location.origin && target.pathname === '/cli-login.html') {
+        if (target.origin === window.location.origin && target.pathname === '/' &&
+            target.searchParams.get('page') === 'cli-login') {
             return target.pathname + target.search;
         }
     } catch {
         // Ignore malformed return URLs.
     }
-    return '/account.html';
+    return '/?page=account';
 }
 
 export function loginForCurrentPage() {
-    return `/login.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    return `/?page=login&next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
 }

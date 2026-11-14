@@ -9,14 +9,14 @@ export function initAccountLink() {
         try {
             const user = await currentUser();
             if (user === null) {
-                link.href = '/login.html';
+                link.href = '/?page=login';
                 setText(label, 'common.apiAccess');
             } else {
-                link.href = '/account.html';
+                link.href = '/?page=account';
                 setText(label, 'home.profile', { username: user.username });
             }
         } catch {
-            link.href = '/account.html';
+            link.href = '/?page=account';
             // Keep the account entry available when session verification fails.
             setText(label, 'access.settings');
         }

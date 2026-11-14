@@ -39,7 +39,8 @@ func (s *TokenService) StartLogin(ctx context.Context, name string) (protocol.De
 	if err != nil {
 		return protocol.DeviceCodeResponse{}, err
 	}
-	return protocol.DeviceCodeResponse{DeviceCode: deviceCode, UserCode: userCode, VerificationURI: "/cli-login.html", VerificationURIComplete: "/cli-login.html?user_code=" + userCode, ExpiresIn: int(LoginLifetime.Seconds()), Interval: 3}, nil
+	verificationURI := "/?page=cli-login"
+	return protocol.DeviceCodeResponse{DeviceCode: deviceCode, UserCode: userCode, VerificationURI: verificationURI, VerificationURIComplete: verificationURI + "&user_code=" + userCode, ExpiresIn: int(LoginLifetime.Seconds()), Interval: 3}, nil
 }
 
 func (s *TokenService) LoginRequest(ctx context.Context, code string) (*ent.UserToken, error) {
