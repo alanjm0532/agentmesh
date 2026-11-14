@@ -25,4 +25,4 @@ USER agentmesh
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/agentmesh-server"]
-CMD ["-config", "/app/deployments/server.toml"]
+CMD ["-config", "/app/config/server.toml"]
