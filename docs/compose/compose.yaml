@@ -2,7 +2,8 @@ name: agentmesh
 
 services:
   agentmesh:
-    image: ghcr.io/alanjm0532/agentmesh-server:v0.1.0
+    container_name: agentmesh
+    image: ghcr.io/alanjm0532/agentmesh-server:v0.1.6
     restart: unless-stopped
     ports:
       - "8080:8080"
