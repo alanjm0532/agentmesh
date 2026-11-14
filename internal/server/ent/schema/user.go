@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/google/uuid"
@@ -20,9 +21,12 @@ func (User) Fields() []ent.Field {
 		// Let the database enforce uniqueness, including concurrent first logins.
 		field.String("username").Unique(),
 		field.String("password").Sensitive(),
-		field.String("access_token").Unique().Sensitive(),
 		// Store timestamps in UTC regardless of the process's local time zone.
 		field.Time("created_at").Default(util.NowUTC).Immutable(),
 		field.Time("updated_at").Default(util.NowUTC).UpdateDefault(util.NowUTC),
 	}
+}
+
+func (User) Edges() []ent.Edge {
+	return []ent.Edge{edge.To("tokens", UserToken.Type)}
 }

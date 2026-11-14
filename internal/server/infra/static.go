@@ -13,6 +13,7 @@ func registerPages(pages *gin.RouterGroup) {
 	pages.StaticFileFS("/", "/", assets)
 	pages.StaticFileFS("/login.html", "login.html", assets)
 	pages.StaticFileFS("/account.html", "account.html", assets)
+	pages.StaticFileFS("/cli-login.html", "cli-login.html", assets)
 	pages.StaticFileFS("/favicon.ico", "images/favicon.ico", assets)
 	pages.StaticFS("/static", assets)
 }

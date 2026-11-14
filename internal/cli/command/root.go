@@ -1,6 +1,11 @@
 package command
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
 	"github.com/alanjm0532/agentmesh/internal/cli/util"
 	"github.com/alanjm0532/agentmesh/internal/cli/version"
@@ -8,7 +13,9 @@ import (
 )
 
 func Execute() error {
-	return newRootCommand(new(config.Config)).Execute()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	return newRootCommand(new(config.Config)).ExecuteContext(ctx)
 }
 
 func newRootCommand(cfg *config.Config) *cobra.Command {

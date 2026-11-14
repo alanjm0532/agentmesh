@@ -13,3 +13,6 @@ agentmesh config set timeout "10s"
 Change only requested settings. For a selected file, prepend
 `--config "<path>"` and reuse it when running `ping`.
 See [CLI reference](cli-reference.md) for result checks.
+
+Changing `server` clears the saved CLI token. Authentication requires HTTPS
+except on loopback hosts. See [authentication](../../../docs/authentication.md).

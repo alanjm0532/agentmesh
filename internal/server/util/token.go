@@ -2,6 +2,7 @@ package util
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 )
 
@@ -12,4 +13,10 @@ func GenerateToken() (string, error) {
 		return "", err
 	}
 	return "agentmesh_" + hex.EncodeToString(token[:]), nil
+}
+
+// HashToken hashes high-entropy credentials before persistence.
+func HashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
 }
