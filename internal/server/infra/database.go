@@ -10,9 +10,10 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/alanjm0532/agentmesh/internal/server/config"
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
+	"go.uber.org/zap"
 )
 
-func NewDatabase(cfg config.Config) (*ent.Client, func(), error) {
+func NewDatabase(cfg config.Config, logger *zap.Logger) (*ent.Client, func(), error) {
 	var dialectName string
 	var connector driver.Connector
 	var err error
@@ -50,7 +51,11 @@ func NewDatabase(cfg config.Config) (*ent.Client, func(), error) {
 	// Each wrapper takes ownership of the same pool, so keep only its current closer.
 	sqlDriver := entsql.OpenDB(dialectName, db)
 	cleanup = func() { _ = sqlDriver.Close() }
-	client := ent.NewClient(ent.Driver(sqlDriver))
+	opts := []ent.Option{ent.Driver(sqlDriver)}
+	if cfg.Server.Mode == "debug" {
+		opts = append(opts, ent.Debug(), ent.Log(logger.Named("sql").Sugar().Info))
+	}
+	client := ent.NewClient(opts...)
 	cleanup = func() { _ = client.Close() }
 	if err = client.Schema.Create(context.Background()); err != nil {
 		return nil, nil, fmt.Errorf("migrate database: %w", err)
