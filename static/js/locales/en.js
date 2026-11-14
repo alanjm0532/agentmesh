@@ -69,7 +69,6 @@ export default {
     "cli.warning": "Verify that the code matches your terminal. This grants API access to your account.",
     "cli.approve": "Authorize AgentMesh CLI",
     "cli.deny": "Deny",
-    "cli.authorized": "Authorized. Return to your terminal to finish logging in.",
     "cli.denied": "Authorization denied. No token was issued.",
     "cli.invalid": "This login request is invalid, expired, or already handled. Start a new login from your CLI."
 };

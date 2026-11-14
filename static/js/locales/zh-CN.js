@@ -69,7 +69,6 @@ export default {
     "cli.warning": "请确认授权码与终端一致。授权后，该 CLI 可访问你的账户 API。",
     "cli.approve": "授权 AgentMesh CLI",
     "cli.deny": "拒绝",
-    "cli.authorized": "已授权，请返回终端完成登录。",
     "cli.denied": "已拒绝授权，未签发 Token。",
     "cli.invalid": "登录请求无效、已过期或已处理，请在 CLI 中重新发起登录。"
 };

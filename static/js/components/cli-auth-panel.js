@@ -73,8 +73,9 @@ export async function initCLIAuthPanel() {
             ready = false;
             details.hidden = true;
             form.hidden = true;
-            setText(status, approve ? 'cli.authorized' : 'cli.denied');
-            showNotice(approve ? 'cli.authorized' : 'cli.denied', approve ? 'success' : 'info');
+            if (approve) { window.location.replace('/'); return; }
+            setText(status, 'cli.denied');
+            showNotice('cli.denied', 'info');
         } catch (error) { if (current === revision) handleError(error); }
         finally { if (current === revision) busy(false); }
     }
