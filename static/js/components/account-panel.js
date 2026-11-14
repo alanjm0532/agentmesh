@@ -1,17 +1,19 @@
-import { currentUser, logout } from '../services/user-service.js';
+import { currentUser, invalidateCurrentUser, logout } from '../services/user-service.js';
 import { listTokens, updateTokenName, disableToken } from '../services/token-service.js';
 import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
 import { confirmAction } from '../utils/confirm-dialog.js';
 import { formatDateTime } from '../utils/time.js';
+import { navigate } from '../utils/router.js';
 
-export async function initAccountPanel() {
+export function initAccountPanel({ signal }) {
     const panel = document.getElementById('account-panel');
     const status = document.getElementById('account-status');
     const content = document.getElementById('account-content');
     const list = document.getElementById('tokens-list');
     const retry = document.getElementById('account-retry');
     let revision = 0;
+    signal.addEventListener('abort', () => { revision++; }, { once: true });
 
     function setBusy(value) {
         panel.setAttribute('aria-busy', String(value));
@@ -22,8 +24,9 @@ export async function initAccountPanel() {
 
     function handleError(error) {
         if (error?.status === 401) {
+            invalidateCurrentUser();
             content.hidden = true;
-            window.location.replace('/?page=login');
+            navigate('/?page=login', { replace: true });
             return;
         }
         showNotice(error?.key, 'danger', error?.params);
@@ -61,10 +64,7 @@ export async function initAccountPanel() {
                 event.preventDefault();
                 const name = input.value.trim();
                 if (!name) { input.focus(); return; }
-                run(async () => {
-                    await updateTokenName(item.id, name);
-                    showNotice('account.saved', 'success');
-                });
+                run(() => updateTokenName(item.id, name), 'account.saved');
             });
             const badge = translated('span', `account.status.${item.status}`);
             badge.className = `token-badge token-badge-${item.status}`;
@@ -85,19 +85,16 @@ export async function initAccountPanel() {
             revoke.type = 'button';
             if (item.status !== 'active') { revoke.disabled = true; revoke.dataset.unavailable = 'true'; }
             revoke.addEventListener('click', async () => {
-                const confirmed = await confirmAction({ title: 'account.revoke', message: 'account.revokeConfirm', confirm: 'account.revoke' });
-                if (!confirmed) return;
-                run(async () => {
-                    await disableToken(item.id);
-                    showNotice('account.revoked', 'success');
-                });
+                const confirmed = await confirmAction({ title: 'account.revoke', message: 'account.revokeConfirm', confirm: 'account.revoke', signal });
+                if (!confirmed || signal.aborted) return;
+                run(() => disableToken(item.id), 'account.revoked');
             });
             row.append(edit, revoke, badge, details);
             list.append(row);
         });
     }
 
-    async function run(action) {
+    async function run(action, successKey) {
         const current = revision;
         clearNotice();
         setBusy(true);
@@ -107,6 +104,7 @@ export async function initAccountPanel() {
             const tokens = await listTokens();
             if (current !== revision) return;
             renderTokens(tokens);
+            showNotice(successKey, 'success');
             retry.hidden = true;
         } catch (error) {
             if (current !== revision) return;
@@ -117,16 +115,16 @@ export async function initAccountPanel() {
         }
     }
 
-    async function loadAccount() {
+    async function loadAccount(refresh = false) {
         const current = ++revision;
         clearNotice();
         retry.hidden = true;
         setBusy(true);
         setText(status, 'access.loading');
         try {
-            const user = await currentUser();
+            const user = await currentUser({ refresh });
             if (current !== revision) return;
-            if (user === null) { content.hidden = true; window.location.replace('/?page=login'); return; }
+            if (user === null) { content.hidden = true; navigate('/?page=login', { replace: true }); return; }
             setText(status, 'access.authenticated', { username: user.username });
             const tokens = await listTokens();
             if (current !== revision) return;
@@ -146,14 +144,17 @@ export async function initAccountPanel() {
         setBusy(true);
         try {
             await logout();
-            revision++;
+            if (signal.aborted) return;
             content.hidden = true;
-            window.location.replace('/');
-        } catch (error) { handleError(error); }
-        finally { setBusy(false); }
+            navigate('/', { replace: true });
+        } catch (error) { if (!signal.aborted) handleError(error); }
+        finally { if (!signal.aborted) setBusy(false); }
     });
-    retry.addEventListener('click', loadAccount);
-    window.addEventListener('pagehide', () => { revision++; });
-    window.addEventListener('pageshow', (event) => { if (event.persisted) loadAccount(); });
-    await loadAccount();
+    retry.addEventListener('click', () => loadAccount(true));
+    window.addEventListener('focus', () => {
+        if (panel.getAttribute('aria-busy') !== 'true') loadAccount(true);
+    }, { signal });
+    window.addEventListener('pagehide', () => { revision++; }, { signal });
+    window.addEventListener('pageshow', (event) => { if (event.persisted) loadAccount(true); }, { signal });
+    loadAccount();
 }

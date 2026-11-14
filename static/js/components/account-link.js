@@ -1,13 +1,14 @@
 import { currentUser } from '../services/user-service.js';
 import { setText } from '../utils/i18n.js';
 
-export function initAccountLink() {
+export function initAccountLink({ signal }) {
     const label = document.getElementById('account-link-label');
     const link = label.closest('a');
 
-    async function refresh() {
+    async function refresh(force = false) {
         try {
-            const user = await currentUser();
+            const user = await currentUser({ refresh: force });
+            if (signal.aborted) return;
             if (user === null) {
                 link.href = '/?page=login';
                 setText(label, 'common.apiAccess');
@@ -16,6 +17,7 @@ export function initAccountLink() {
                 setText(label, 'home.profile', { username: user.username });
             }
         } catch {
+            if (signal.aborted) return;
             link.href = '/?page=account';
             // Keep the account entry available when session verification fails.
             setText(label, 'access.settings');
@@ -23,11 +25,11 @@ export function initAccountLink() {
     }
 
     refresh();
-    window.addEventListener('focus', refresh);
+    window.addEventListener('focus', () => refresh(true), { signal });
     window.addEventListener('pageshow', (event) => {
         // Browser back navigation may restore the page without reloading its scripts.
         if (event.persisted) {
-            refresh();
+            refresh(true);
         }
-    });
+    }, { signal });
 }

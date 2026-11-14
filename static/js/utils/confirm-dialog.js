@@ -2,7 +2,8 @@ import { setText } from './i18n.js';
 
 let dialog;
 
-export function confirmAction({ title, message, confirm = 'common.confirm' }) {
+export function confirmAction({ title, message, confirm = 'common.confirm', signal }) {
+    if (signal?.aborted) return Promise.resolve(false);
     if (!dialog) {
         dialog = document.createElement('dialog');
         dialog.className = 'confirm-dialog';
@@ -40,9 +41,11 @@ export function confirmAction({ title, message, confirm = 'common.confirm' }) {
         const dismiss = () => dialog.close('cancel');
         dialog.addEventListener('close', () => {
             window.removeEventListener('pagehide', dismiss);
+            signal?.removeEventListener('abort', dismiss);
             resolve(dialog.returnValue === 'confirm');
         }, { once: true });
         window.addEventListener('pagehide', dismiss, { once: true });
+        signal?.addEventListener('abort', dismiss, { once: true });
         dialog.showModal();
     });
 }

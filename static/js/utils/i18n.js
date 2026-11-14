@@ -20,7 +20,7 @@ export function setText(element, key, params = {}) {
     element.textContent = t(key, params);
 }
 
-function renderTranslations() {
+export function renderTranslations() {
     document.documentElement.lang = language;
     document.querySelectorAll('[data-i18n]').forEach((element) => {
         element.textContent = t(element.dataset.i18n, JSON.parse(element.dataset.i18nParams ?? '{}'));

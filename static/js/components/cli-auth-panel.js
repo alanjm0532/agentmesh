@@ -1,11 +1,12 @@
-import { currentUser } from '../services/user-service.js';
+import { currentUser, invalidateCurrentUser } from '../services/user-service.js';
 import { pendingCLIRequest, decideCLIRequest } from '../services/token-service.js';
 import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
 import { loginForCurrentPage } from '../utils/auth-return.js';
 import { formatDateTime } from '../utils/time.js';
+import { navigate } from '../utils/router.js';
 
-export async function initCLIAuthPanel() {
+export function initCLIAuthPanel({ signal }) {
     const panel = document.getElementById('cli-panel');
     const status = document.getElementById('cli-status');
     const form = document.getElementById('cli-code-form');
@@ -15,6 +16,8 @@ export async function initCLIAuthPanel() {
     let ready = false;
     let revision = 0;
     let expiresAt;
+    let finished = false;
+    signal.addEventListener('abort', () => { revision++; ready = false; }, { once: true });
     code.value = new URLSearchParams(window.location.search).get('user_code') ?? '';
 
     function busy(value) {
@@ -26,13 +29,13 @@ export async function initCLIAuthPanel() {
         ready = false;
         details.hidden = true;
         form.hidden = false;
-        if (error?.status === 401) { window.location.replace(loginForCurrentPage()); return; }
+        if (error?.status === 401) { invalidateCurrentUser(); navigate(loginForCurrentPage(), { replace: true }); return; }
         retry.hidden = false;
         if (error?.status === 400) { showNotice('cli.invalid', 'danger'); }
         else { showNotice(error?.key, 'danger', error?.params); }
     }
 
-    async function load() {
+    async function load(refresh = false) {
         const current = ++revision;
         busy(true);
         ready = false;
@@ -40,9 +43,9 @@ export async function initCLIAuthPanel() {
         retry.hidden = true;
         clearNotice();
         try {
-            const user = await currentUser();
+            const user = await currentUser({ refresh });
             if (current !== revision) return;
-            if (!user) { window.location.replace(loginForCurrentPage()); return; }
+            if (!user) { navigate(loginForCurrentPage(), { replace: true }); return; }
             setText(status, 'access.authenticated', { username: user.username });
             if (!code.value.trim()) { form.hidden = false; return; }
             const request = await pendingCLIRequest(code.value.trim().toLowerCase());
@@ -73,7 +76,8 @@ export async function initCLIAuthPanel() {
             ready = false;
             details.hidden = true;
             form.hidden = true;
-            if (approve) { window.location.replace('/'); return; }
+            finished = true;
+            if (approve) { navigate('/', { replace: true }); return; }
             setText(status, 'cli.denied');
             showNotice('cli.denied', 'info');
         } catch (error) { if (current === revision) handleError(error); }
@@ -89,8 +93,11 @@ export async function initCLIAuthPanel() {
     });
     document.getElementById('cli-approve').addEventListener('click', () => decide(true));
     document.getElementById('cli-deny').addEventListener('click', () => decide(false));
-    retry.addEventListener('click', load);
-    window.addEventListener('pagehide', () => { revision++; ready = false; details.hidden = true; });
-    window.addEventListener('pageshow', (event) => { if (event.persisted) load(); });
-    await load();
+    retry.addEventListener('click', () => load(true));
+    window.addEventListener('focus', () => {
+        if (!finished && panel.getAttribute('aria-busy') !== 'true') load(true);
+    }, { signal });
+    window.addEventListener('pagehide', () => { revision++; ready = false; details.hidden = true; }, { signal });
+    window.addEventListener('pageshow', (event) => { if (event.persisted && !finished) load(true); }, { signal });
+    load();
 }
