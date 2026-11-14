@@ -31,6 +31,24 @@ Open a new terminal, then run:
 agentmesh --version
 ```
 
+## Check existing login
+
+Before configuring the server or starting login, check the current authentication
+status:
+
+```bash
+agentmesh auth status
+```
+
+If the command succeeds and prints `Logged in as <username>`, authentication is
+already valid. Skip server configuration and login; setup is complete. Start a
+new agent session to discover the installed skill.
+
+If the CLI is not logged in or the token is invalid, continue with the steps
+below. If the status check fails because of a connection error, verify the server
+configuration and resolve the connection error, then check the status again
+before starting login.
+
 ## Configure the server
 
 Before logging in, set the AgentMesh server URL provided by the user. If the URL
