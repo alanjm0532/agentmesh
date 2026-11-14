@@ -24,7 +24,7 @@ func (UserToken) Fields() []ent.Field {
 		field.String("name").MaxLen(100).NotEmpty(),
 		field.Enum("status").Values("pending", "approved", "active", "denied", "revoked").Default("pending"),
 		field.String("device_code_hash").MaxLen(64).Optional().Nillable().Unique().Sensitive(),
-		field.String("user_code").MaxLen(9).Optional().Nillable().Unique().Sensitive(),
+		field.String("user_code").MaxLen(36).Optional().Nillable().Unique().Sensitive(),
 		field.String("token_hash").MaxLen(64).Optional().Nillable().Unique().Sensitive(),
 		field.Time("expires_at"),
 		field.Time("created_at").Default(util.NowUTC).Immutable(),

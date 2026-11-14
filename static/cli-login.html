@@ -50,7 +50,7 @@
             <p id="cli-status" class="token-status" role="status" data-i18n="access.loading">Checking login status…</p>
             <form id="cli-code-form">
                 <label for="cli-code" class="form-label" data-i18n="cli.code">Authorization code</label>
-                <input id="cli-code" class="form-control token-input" name="code" required maxlength="9" pattern="[A-Za-z2-9]{4}-[A-Za-z2-9]{4}" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH">
+                <input id="cli-code" class="form-control token-input" name="code" required maxlength="36" pattern="[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}" autocomplete="off" spellcheck="false" placeholder="550e8400-e29b-41d4-a716-446655440000">
                 <button class="btn action-secondary mt-3" type="submit" data-i18n="cli.lookup">Find request</button>
             </form>
             <div id="cli-request" hidden>

@@ -7,6 +7,7 @@ import (
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
+	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -24,13 +25,13 @@ func NewHandler(userService *service.UserService, tokenService *service.TokenSer
 func (h *Handler) Login(c *gin.Context) {
 	var input entity.LoginRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid login request"})
+		util.InvalidRequest(c)
 		return
 	}
 
 	user, err := h.userService.Login(c.Request.Context(), input.Username, input.Password)
 	if errors.Is(err, entity.ErrPasswordTooLong) {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Password must not exceed 72 bytes"})
+		util.InvalidRequest(c)
 		return
 	}
 	if errors.Is(err, entity.ErrInvalidCredentials) {

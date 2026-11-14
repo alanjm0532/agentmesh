@@ -44,7 +44,7 @@ export async function initCLIAuthPanel() {
             if (!user) { window.location.replace(loginForCurrentPage()); return; }
             setText(status, 'access.authenticated', { username: user.username });
             if (!code.value.trim()) { form.hidden = false; return; }
-            const request = await pendingCLIRequest(code.value.trim().toUpperCase());
+            const request = await pendingCLIRequest(code.value.trim().toLowerCase());
             if (current !== revision) return;
             code.value = request.user_code;
             document.getElementById('cli-name').textContent = request.name;
@@ -81,7 +81,7 @@ export async function initCLIAuthPanel() {
     form.addEventListener('submit', (event) => {
         event.preventDefault();
         const target = new URL(window.location.href);
-        target.searchParams.set('user_code', code.value.trim().toUpperCase());
+        target.searchParams.set('user_code', code.value.trim().toLowerCase());
         window.history.replaceState(null, '', target.pathname + target.search);
         load();
     });
