@@ -15,8 +15,8 @@ init: ## Download project dependencies and install golangci-lint
 ent: ## Generate Ent database access and migration code
 	$(GO) tool ent generate ./internal/server/ent/schema
 
-wire: ent ## Generate Ent and Wire dependency injection code for the server and tests
-	$(GO) tool wire ./internal/server ./internal/test
+wire: ent ## Generate Ent and Wire dependency injection code for the server
+	$(GO) tool wire ./internal/server
 
 generate: wire ## Generate project code (Ent and Wire)
 
@@ -26,7 +26,7 @@ fmt: ## Format Go code
 lint: generate ## Generate Ent and Wire code and run golangci-lint
 	golangci-lint run -v
 
-test: generate ## Generate code and run tests using the configured test database
+test: generate ## Generate code and run tests
 	$(GO) test -count=1 $(TEST_ARGS) ./...
 
 build: build-cli build-server ## Build the CLI and HTTP server
