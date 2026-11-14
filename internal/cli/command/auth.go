@@ -21,8 +21,6 @@ import (
 )
 
 func init() {
-	registerCommand(newLoginCommand)
-	registerCommand(newLogoutCommand)
 	registerCommand(newAuthCommand)
 }
 
@@ -93,7 +91,7 @@ func waitForAuthorization(ctx context.Context, api *client.Client, grant protoco
 	for {
 		select {
 		case <-ctx.Done():
-			return protocol.AccessTokenResponse{}, fmt.Errorf("login canceled or expired; run agentmesh login again: %w", ctx.Err())
+			return protocol.AccessTokenResponse{}, fmt.Errorf("login canceled or expired; run agentmesh auth login again: %w", ctx.Err())
 		case <-ticker.C:
 			response, err := api.Exchange(ctx, grant.DeviceCode)
 			if err == nil {
@@ -117,7 +115,7 @@ func waitForAuthorization(ctx context.Context, api *client.Client, grant protoco
 			case "access_denied":
 				return protocol.AccessTokenResponse{}, fmt.Errorf("authorization was denied")
 			case "expired_token":
-				return protocol.AccessTokenResponse{}, fmt.Errorf("login expired; run agentmesh login again")
+				return protocol.AccessTokenResponse{}, fmt.Errorf("login expired; run agentmesh auth login again")
 			default:
 				return protocol.AccessTokenResponse{}, err
 			}
@@ -126,11 +124,12 @@ func waitForAuthorization(ctx context.Context, api *client.Client, grant protoco
 }
 
 func newAuthCommand(cfg *config.Config) *cobra.Command {
-	cmd := &cobra.Command{Use: "auth", Short: "Inspect CLI authentication", Args: cobra.NoArgs}
+	cmd := &cobra.Command{Use: "auth", Short: "Manage CLI authentication", Args: cobra.NoArgs}
+	cmd.AddCommand(newLoginCommand(cfg), newLogoutCommand(cfg))
 	cmd.AddCommand(&cobra.Command{Use: "status", Short: "Verify the current token with the server", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cfg.Token == "" {
-				return fmt.Errorf("not logged in; run agentmesh login")
+				return fmt.Errorf("not logged in; run agentmesh auth login")
 			}
 			user, err := client.New(cfg.Server, cfg.Timeout).WithToken(cfg.Token).Me(cmd.Context())
 			if err != nil {

@@ -16,7 +16,7 @@ type APIError struct {
 
 func (e *APIError) Error() string {
 	if e.Status == http.StatusUnauthorized {
-		return "authentication failed; run agentmesh login again"
+		return "authentication failed; run agentmesh auth login again"
 	}
 	if e.Status == http.StatusForbidden {
 		return "permission denied"

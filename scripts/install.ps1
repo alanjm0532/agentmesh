@@ -20,19 +20,41 @@ switch ($nativeArch) {
 if (-not [IO.Path]::IsPathRooted($InstallDir)) { throw 'InstallDir must be an absolute path.' }
 
 $repo = 'https://github.com/alanjm0532/agentmesh'
+$releasesApi = 'https://api.github.com/repos/alanjm0532/agentmesh/releases'
 $stage = Join-Path ([IO.Path]::GetTempPath()) ('agentmesh-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage | Out-Null
 try {
+    $release = $null
     if ($Version -eq 'latest') {
-        $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/alanjm0532/agentmesh/releases/latest'
+        $release = Invoke-RestMethod -Uri "$releasesApi/latest" -TimeoutSec 45
         $Version = $release.tag_name
     }
-    if ($Version -notmatch '^[a-zA-Z0-9._-]+$') { throw 'Invalid release tag.' }
+    if ($Version -notmatch '^[a-zA-Z0-9][a-zA-Z0-9._-]*$' -or $Version -eq 'latest') { throw 'Invalid release tag.' }
     $baseUrl = "$repo/releases/download/$Version"
     $binary = "agentmesh_windows_$arch.exe"
     Write-Host "Installing AgentMesh $Version for windows/$arch..."
     foreach ($asset in @($binary, 'SHA256SUMS')) {
-        Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/$asset" -OutFile (Join-Path $stage $asset)
+        $destination = Join-Path $stage $asset
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/$asset" -OutFile $destination -TimeoutSec 45
+        } catch {
+            $directError = $_.Exception.Message
+            Write-Host "Direct download failed for $asset; trying the GitHub API..."
+            try {
+                if (-not $release) {
+                    $release = Invoke-RestMethod -Uri "$releasesApi/tags/$Version" -TimeoutSec 45
+                }
+                if ($release.tag_name -cne $Version) { throw 'Release tag mismatch.' }
+                $releaseAssets = @($release.assets | Where-Object { $_.name -ceq $asset })
+                if ($releaseAssets.Count -ne 1 -or [string]$releaseAssets[0].id -notmatch '^[1-9][0-9]*$') {
+                    throw "Release $Version has no unique asset $asset."
+                }
+                Invoke-WebRequest -UseBasicParsing -Uri "$releasesApi/assets/$($releaseAssets[0].id)" `
+                    -Headers @{ Accept = 'application/octet-stream' } -OutFile $destination -TimeoutSec 45
+            } catch {
+                throw "Download failed for ${asset}. Direct: $directError; GitHub API fallback: $($_.Exception.Message)"
+            }
+        }
     }
     $checksums = @{}
     foreach ($line in Get-Content -LiteralPath (Join-Path $stage 'SHA256SUMS')) {

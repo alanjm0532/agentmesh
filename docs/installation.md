@@ -17,6 +17,12 @@ irm https://github.com/alanjm0532/agentmesh/releases/latest/download/install.ps1
 The script downloads the CLI, configures PATH, and runs `agentmesh skill install`
 to install the skill at `~/.agents/skills/agentmesh/`.
 
+The installers and `agentmesh skill install` try the normal GitHub Release
+download URL first. If a download fails or times out (45 seconds per attempt),
+they automatically retry that file through the official GitHub Releases API.
+Both paths download the same release and require SHA-256 verification before
+installation. If both fail, the command reports an error.
+
 ## Verify installation
 
 Open a new terminal, then run:
@@ -45,7 +51,7 @@ Start login. The CLI will try to open the authorization page in the default
 browser:
 
 ```bash
-agentmesh login
+agentmesh auth login
 ```
 
 Show the printed authorization code to the user. Ask the user to sign in if
@@ -54,7 +60,7 @@ AgentMesh CLI**. If the browser does not open automatically, give the user the
 printed authorization URL to open manually.
 
 For a remote terminal or an environment without a browser, use
-`agentmesh login --no-browser` and give the user the printed authorization URL
+`agentmesh auth login --no-browser` and give the user the printed authorization URL
 and code to complete authorization in their browser.
 
 Keep the login command running while the user completes authorization. The CLI

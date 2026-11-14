@@ -3,7 +3,65 @@
 set -eu
 
 fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-fetch() { curl --fail --silent --show-error --location --retry 2 --connect-timeout 15 --max-time 180 "$1" -o "$2"; }
+fetch() {
+    fetch_url=$1
+    fetch_path=$2
+    shift 2
+    curl --fail --silent --show-error --location --connect-timeout 15 --max-time 45 "$@" "$fetch_url" -o "$fetch_path"
+}
+
+# Read only the release tag and top-level asset names/IDs. Tokenize JSON rather
+# than relying on GitHub whitespace or field order; no jq/Python dependency.
+release_info() {
+    awk '
+    {
+        while (match($0, /"([^"\\]|\\.)*"|[][{}:,]|[0-9]+/)) {
+            token = substr($0, RSTART, RLENGTH)
+            $0 = substr($0, RSTART + RLENGTH)
+            value = token
+            if (substr(token, 1, 1) == "\"") value = substr(token, 2, length(token) - 2)
+            if (token == "{" || token == "[") {
+                depth++
+                if (token == "[" && depth == 2 && key == "assets") assets = depth
+                if (token == "{" && assets && depth == assets + 1) { name = ""; id = "" }
+            } else if (token == "}" || token == "]") {
+                if (token == "}" && assets && depth == assets + 1 && name ~ /^[a-zA-Z0-9._-]+$/ && id ~ /^[1-9][0-9]*$/)
+                    print "asset", name, id
+                if (token == "]" && depth == assets) assets = 0
+                depth--
+            } else if (token == ":") {
+                key = previous_value
+            } else if (previous == ":") {
+                if (depth == 1 && key == "tag_name" && value ~ /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/) print "tag", value
+                if (assets && depth == assets + 1) {
+                    if (key == "name") name = value
+                    if (key == "id") id = value
+                }
+            }
+            previous = token
+            previous_value = value
+        }
+    }' "$1"
+}
+
+fetch_release_info() {
+    fetch "$1" "$stage/release.json" -H 'Accept: application/vnd.github+json' || return 1
+    release_info "$stage/release.json" > "$stage/release-info"
+}
+
+fetch_asset() {
+    if fetch "$base_url/$1" "$stage/$1"; then return 0; fi
+    printf 'Direct download failed for %s; trying the GitHub API...\n' "$1" >&2
+    if [ ! -f "$stage/release-info" ]; then
+        fetch_release_info "$releases_api/tags/$version" || fail 'GitHub API release lookup failed after direct download failed.'
+    fi
+    api_tag=$(awk '$1 == "tag" {print $2}' "$stage/release-info")
+    [ "$api_tag" = "$version" ] || fail 'GitHub API release tag mismatch.'
+    asset_id=$(awk -v name="$1" '$1 == "asset" && $2 == name {print $3}' "$stage/release-info")
+    case "$asset_id" in ''|*[!0-9]*) fail "Missing or ambiguous GitHub API asset: $1." ;; esac
+    fetch "$releases_api/assets/$asset_id" "$stage/$1" -H 'Accept: application/octet-stream' \
+        || fail "Both direct and GitHub API downloads failed for $1."
+}
 
 command -v curl >/dev/null 2>&1 || fail 'curl is required.'
 case "$(uname -s)" in
@@ -25,25 +83,31 @@ else
 fi
 
 repo=https://github.com/alanjm0532/agentmesh
-version=${AGENTMESH_VERSION:-latest}
-if [ "$version" = latest ]; then
-    release_url=$(curl --fail --silent --show-error --head --location --retry 2 \
-        --connect-timeout 15 --max-time 60 --output /dev/null --write-out '%{url_effective}' "$repo/releases/latest")
-    case "$release_url" in
-        "$repo"/releases/tag/*) version=${release_url##*/} ;;
-        *) fail 'Cannot resolve the latest published release.' ;;
-    esac
-fi
-case "$version" in ''|*[!a-zA-Z0-9._-]*) fail 'Release tags must contain only letters, digits, dots, underscores, and hyphens.' ;; esac
-base_url=$repo/releases/download/$version
-binary=agentmesh_${os}_${arch}
+releases_api=https://api.github.com/repos/alanjm0532/agentmesh/releases
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 trap 'exit 1' HUP INT TERM
+version=${AGENTMESH_VERSION:-latest}
+if [ "$version" = latest ]; then
+    release_url=$(curl --fail --silent --show-error --head --location \
+        --connect-timeout 15 --max-time 45 --output /dev/null --write-out '%{url_effective}' "$repo/releases/latest") || release_url=''
+    case "$release_url" in
+        "$repo"/releases/tag/*) version=${release_url##*/} ;;
+        *)
+            printf 'Cannot resolve latest release directly; trying the GitHub API...\n' >&2
+            fetch_release_info "$releases_api/latest" || fail 'Cannot resolve the latest published release.'
+            version=$(awk '$1 == "tag" {print $2}' "$stage/release-info")
+            ;;
+    esac
+fi
+case "$version" in ''|*[!a-zA-Z0-9._-]*) fail 'Release tags must contain only letters, digits, dots, underscores, and hyphens.' ;; esac
+[ "$version" != latest ] || fail 'Cannot resolve the latest published release.'
+base_url=$repo/releases/download/$version
+binary=agentmesh_${os}_${arch}
 
 printf 'Installing AgentMesh %s for %s/%s...\n' "$version" "$os" "$arch"
-fetch "$base_url/$binary" "$stage/$binary"
-fetch "$base_url/SHA256SUMS" "$stage/SHA256SUMS"
+fetch_asset "$binary"
+fetch_asset SHA256SUMS
 expected=$(awk -v name="$binary" '$2 == name {print $1}' "$stage/SHA256SUMS")
 [ "${#expected}" -eq 64 ] || fail "Missing or invalid checksum for $binary."
 actual=$(hash_file "$stage/$binary")
