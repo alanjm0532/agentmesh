@@ -61,7 +61,6 @@ func registerWebRoutes(router *gin.Engine, h *handler.Handler, store sessions.St
 	web.GET("/profile", middleware.SessionAuth(), h.Profile)
 	protected := web.Group("", middleware.SessionAuth())
 	protected.GET("/tokens", h.ListTokens)
-	protected.POST("/tokens", h.CreateToken)
 	protected.POST("/tokens/:id/rename", h.RenameToken)
 	protected.POST("/tokens/:id/revoke", h.RevokeToken)
 	protected.GET("/cli/request", h.CLIRequest)

@@ -75,20 +75,6 @@ func (h *Handler) ListTokens(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
 }
 
-func (h *Handler) CreateToken(c *gin.Context) {
-	var input entity.TokenRequest
-	if err := c.ShouldBindJSON(&input); err != nil {
-		util.InvalidRequest(c)
-		return
-	}
-	token, err := h.tokenService.Create(c.Request.Context(), c.MustGet("userID").(uuid.UUID), input.Name, input.ExpiresInDays)
-	if err != nil {
-		tokenError(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, token)
-}
-
 func (h *Handler) RenameToken(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

@@ -3,6 +3,7 @@ import { pendingCLIRequest, decideCLIRequest } from '../services/token-service.j
 import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
 import { loginForCurrentPage } from '../utils/auth-return.js';
+import { formatDateTime } from '../utils/time.js';
 
 export async function initCLIAuthPanel() {
     const panel = document.getElementById('cli-panel');
@@ -52,7 +53,7 @@ export async function initCLIAuthPanel() {
             const time = document.getElementById('cli-expires');
             expiresAt = new Date(request.expires_at);
             time.dateTime = request.expires_at;
-            time.textContent = expiresAt.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+            time.textContent = formatDateTime(request.expires_at);
             details.hidden = false;
             form.hidden = true;
             ready = true;

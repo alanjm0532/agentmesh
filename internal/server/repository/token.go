@@ -68,10 +68,6 @@ func (r *TokenRepository) Exchange(ctx context.Context, grant *ent.UserToken, ha
 	return user, nil
 }
 
-func (r *TokenRepository) Create(ctx context.Context, userID uuid.UUID, name, hash string, expires time.Time) (*ent.UserToken, error) {
-	return r.client.UserToken.Create().SetUserID(userID).SetName(name).SetStatus(usertoken.StatusActive).SetTokenHash(hash).SetExpiresAt(expires).Save(ctx)
-}
-
 func (r *TokenRepository) List(ctx context.Context, userID uuid.UUID) ([]*ent.UserToken, error) {
 	return r.client.UserToken.Query().Where(usertoken.UserIDEQ(userID), usertoken.StatusIn(usertoken.StatusActive, usertoken.StatusRevoked)).Order(ent.Desc(usertoken.FieldCreatedAt), ent.Desc(usertoken.FieldID)).All(ctx)
 }

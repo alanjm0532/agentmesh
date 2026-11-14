@@ -106,18 +106,6 @@ func (s *TokenService) Exchange(ctx context.Context, device string) (protocol.Ac
 	return protocol.AccessTokenResponse{AccessToken: raw, TokenType: "Bearer", ExpiresIn: int(TokenLifetime.Seconds()), ExpiresAt: expires, User: protocol.IdentityResponse{ID: user.ID.String(), Username: user.Username}}, nil
 }
 
-func (s *TokenService) Create(ctx context.Context, userID uuid.UUID, name string, days int) (entity.CreatedTokenResponse, error) {
-	raw, err := util.GenerateToken()
-	if err != nil {
-		return entity.CreatedTokenResponse{}, err
-	}
-	token, err := s.tokens.Create(ctx, userID, strings.TrimSpace(name), util.HashToken(raw), util.NowUTC().Add(time.Duration(days)*24*time.Hour))
-	if err != nil {
-		return entity.CreatedTokenResponse{}, err
-	}
-	return entity.CreatedTokenResponse{Token: tokenView(token), AccessToken: raw}, nil
-}
-
 func tokenView(token *ent.UserToken) entity.TokenView {
 	status := string(token.Status)
 	if token.Status == usertoken.StatusActive && !token.ExpiresAt.After(util.NowUTC()) {

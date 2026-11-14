@@ -420,20 +420,16 @@ button:focus-visible, a:focus-visible {
 .token-card-heading .token-home-link { margin-left: auto; flex-shrink: 0; }
 .token-status { color: var(--app-muted); font-size: 12px; margin-bottom: 26px; }
 .token-input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
-.token-field { display: flex; align-items: center; min-width: 0; background: var(--app-soft); border: 1px solid var(--app-border); border-radius: 11px; }
-.token-field:focus-within { border-color: var(--app-accent); box-shadow: 0 0 0 3px var(--app-accent-soft); }
-.token-field .form-control { flex: 1; width: 0; background: transparent; border: 0; box-shadow: none; }
-.token-input-actions { display: flex; flex-shrink: 0; gap: 4px; padding-right: 7px; }
-.token-input-actions .control-button { width: 30px; height: 30px; }
-.token-input-actions .control-button:disabled { opacity: 0.5; }
 .token-help { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 24px; padding: 14px; color: var(--app-muted); background: var(--app-soft); border-radius: 10px; }
 .token-help .icon { margin-top: 2px; width: 14px; height: 14px; }
 .token-help p { font-size: 11px; line-height: 1.8; margin: 0; }
 .token-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.auth-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.auth-intro { margin: 0; color: var(--app-muted); font-size: 12px; line-height: 1.6; text-align: center; }
 .account-actions { flex-wrap: nowrap; gap: 8px; }
 .account-actions > .btn { flex: 1; min-width: 0; padding-inline: 8px; font-size: 12px; white-space: normal; }
 .account-actions > [hidden] { display: none; }
-#token-controls[hidden], #account-retry[hidden] { display: none; }
+#account-retry[hidden] { display: none; }
 .alert { font-size: 13px; border-radius: 12px; }
 
 .confirm-dialog {
@@ -562,35 +558,40 @@ button:focus-visible, a:focus-visible {
 
 /* Token lists grow with the account rather than being constrained to one viewport. */
 body:has(.tokens-main), body:has(#cli-panel) { height: auto; min-height: 100dvh; }
-.tokens-main.access-main { display: block; flex: 1 0 auto; max-width: 880px; padding-block: 40px; }
-.tokens-main .access-heading { text-align: center; }
-.tokens-main .token-card { min-width: 0; }
-.token-create-form { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; align-items: end; gap: 12px; }
-.token-create-form .btn { min-height: 44px; }
-.new-token { margin-top: 24px; padding: 20px; background: var(--app-accent-soft); border: 1px solid var(--app-border); border-radius: 12px; }
-.new-token h3, .tokens-list-heading { font-size: 16px; font-weight: 650; }
-.new-token p { color: var(--app-muted); font-size: 13px; line-height: 1.7; }
-.tokens-list-heading { margin-block: 28px 16px; }
-.tokens-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
-.token-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 18px; background: var(--app-soft); border: 1px solid var(--app-border); border-radius: 12px; }
-.token-edit-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
-.token-edit-form label { grid-column: 1 / -1; margin: 0; font-size: 12px; }
-.token-edit-form .btn { min-height: 44px; }
-.token-badge { align-self: start; font-size: 12px; background: var(--app-accent-soft); color: var(--app-accent); border-radius: 20px; padding: 5px 10px; }
+.tokens-main.access-main { display: block; flex: 1 0 auto; max-width: 880px; padding-block: 24px; }
+.tokens-main .access-heading { text-align: left; margin-bottom: 16px; }
+.tokens-main .access-title { font-size: 26px; margin: 0 0 6px; }
+.tokens-main .access-description { font-size: 13px; }
+.tokens-main .token-card { min-width: 0; padding: 20px; border-radius: 16px; }
+.tokens-main .token-card-heading { margin-bottom: 6px; }
+.tokens-main .token-status { margin-bottom: 16px; }
+.tokens-main .form-label { margin-bottom: 5px; }
+.tokens-main .form-control { min-height: 36px; padding: 7px 10px; border-radius: 8px; font-size: 13px; }
+.tokens-main .btn { min-height: 36px; padding: 7px 12px; border-radius: 8px; font-size: 12px; }
+.tokens-main .account-actions { justify-content: flex-end; }
+.tokens-main .account-actions > .btn { flex: 0 0 auto; }
+.tokens-list-heading { font-size: 14px; font-weight: 650; }
+.tokens-list-heading { margin-block: 20px 10px; }
+.tokens-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.token-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; padding: 12px; background: var(--app-soft); border: 1px solid var(--app-border); border-radius: 10px; }
+.token-edit-form { display: grid; grid-column: 1; grid-row: 1; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; min-width: 0; align-items: center; }
+.token-badge { grid-column: 3; grid-row: 1; justify-self: end; font-size: 11px; background: var(--app-accent-soft); color: var(--app-accent); border-radius: 20px; padding: 3px 8px; }
 .token-badge-revoked, .token-badge-expired { color: var(--app-muted); background: var(--app-surface); }
-.token-metadata, .cli-request-details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 12px; }
+.token-metadata { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 4px 20px; margin: 0; font-size: 11px; }
+.token-metadata > div { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.cli-request-details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 12px; }
 .token-metadata dt, .cli-request-details dt { color: var(--app-muted); font-weight: 500; }
 .token-metadata dd, .cli-request-details dd { margin: 0; overflow-wrap: anywhere; }
-.token-revoke { align-self: end; }
+.token-revoke { grid-column: 2; grid-row: 1; }
 .cli-request-details { margin-bottom: 20px; }
 #cli-request > p { color: var(--app-muted); font-size: 13px; line-height: 1.8; }
 #cli-panel [hidden], #account-panel [hidden] { display: none; }
 @media (max-width: 640px) {
-    .token-create-form { grid-template-columns: minmax(0, 1fr) 110px; }
-    .token-create-form > button { grid-column: 1 / -1; }
-    .token-entry { grid-template-columns: minmax(0, 1fr); }
-    .token-badge { justify-self: start; }
-    .token-metadata { grid-template-columns: 1fr; gap: 4px; }
-    .token-metadata dd { margin-bottom: 8px; }
-    .token-revoke { justify-self: start; }
+    .tokens-main.access-main { padding-block: 20px; }
+    .tokens-main .token-card { padding: 16px; }
+    .tokens-main .access-title { font-size: 24px; }
+    .token-entry { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; }
+    .token-edit-form { grid-column: 1 / -1; }
+    .token-badge { grid-column: 2; grid-row: 2; }
+    .token-revoke { grid-column: 1; grid-row: 2; justify-self: start; }
 }

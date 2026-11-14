@@ -39,7 +39,6 @@
             <div class="access-symbol" aria-hidden="true"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg></div>
             <p class="eyebrow" data-i18n="access.eyebrow">YOUR ACCOUNT</p>
             <h1 class="access-title" data-i18n="access.heading">Log in to AgentMesh</h1>
-            <p class="access-description" data-i18n="access.intro">Log in to continue. New accounts are created automatically.</p>
         </header>
         <div id="notice" class="alert d-none" role="status" aria-live="polite" aria-atomic="true"></div>
         <section class="token-card" aria-label="Account" data-i18n-aria-label="access.settings">
@@ -51,8 +50,9 @@
                 <label class="form-label" for="password" data-i18n="access.password">Password</label>
                 <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" aria-describedby="auth-help" required disabled>
                 <div class="token-help"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg><p id="auth-help" data-i18n="access.help">If your username does not exist, an account will be created automatically. Usernames support up to 255 characters; passwords support up to 72 bytes.</p></div>
-                <div class="token-actions">
+                <div class="token-actions auth-actions">
                     <button id="auth-submit" class="btn action-primary" type="submit" data-i18n="access.login" disabled>Log in</button>
+                    <p class="auth-intro" data-i18n="access.intro">Log in to continue. New accounts are created automatically.</p>
                 </div>
             </form>
         </section>
