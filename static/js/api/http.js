@@ -20,6 +20,7 @@ async function request(path, options) {
             credentials: 'same-origin',
             headers: {
                 Accept: 'application/json',
+                'X-AgentMesh-CSRF': '1',
                 ...options.headers,
             },
         });

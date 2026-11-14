@@ -1,6 +1,7 @@
 import { authenticate, currentUser } from '../services/user-service.js';
 import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
+import { authReturnURL } from '../utils/auth-return.js';
 
 export async function initAuthPanel() {
     const form = document.getElementById('auth-form');
@@ -17,7 +18,7 @@ export async function initAuthPanel() {
         const authenticated = user !== null;
         form.hidden = authenticated;
         if (authenticated) {
-            window.location.replace('/account.html');
+            window.location.replace(authReturnURL());
         }
         setText(status, authenticated ? 'access.authenticated' : 'access.signedOut', authenticated ? { username: user.username } : {});
     }
@@ -33,7 +34,7 @@ export async function initAuthPanel() {
                 password: data.get('password'),
             });
             form.reset();
-            window.location.replace('/');
+            window.location.replace(authReturnURL());
         } catch (error) {
             showNotice(error?.key, 'danger', error?.params);
         } finally {

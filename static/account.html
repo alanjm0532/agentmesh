@@ -33,12 +33,12 @@
             </div>
         </nav>
     </header>
-    <main class="site-container access-main">
+    <main class="site-container access-main tokens-main">
         <header class="access-heading">
             <div class="access-symbol" aria-hidden="true"><svg class="icon " aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg></div>
             <p class="eyebrow" data-i18n="access.eyebrow">YOUR ACCOUNT</p>
-            <h1 class="access-title" data-i18n="account.heading">Manage your token</h1>
-            <p class="access-description" data-i18n="account.intro">View, copy, or reset your access token.</p>
+            <h1 class="access-title" data-i18n="account.heading">Manage your tokens</h1>
+            <p class="access-description" data-i18n="account.intro">Create and manage access tokens for your devices and integrations.</p>
         </header>
         <div id="notice" class="alert d-none" role="status" aria-live="polite" aria-atomic="true"></div>
         <section id="account-panel" class="token-card" aria-label="Token management" data-i18n-aria-label="account.settings" aria-busy="true">
@@ -48,21 +48,43 @@
                 <a class="nav-page-link token-home-link" href="/" data-i18n="common.home">Back to home</a>
             </div>
             <p id="account-status" class="token-status" role="status" data-i18n="access.loading">Checking login status…</p>
-            <div id="token-controls" hidden>
-                <label class="form-label" for="access-token" data-i18n="account.token">Access token</label>
-                <div class="token-field">
-                    <input id="access-token" class="form-control token-input" type="password" readonly autocomplete="off" spellcheck="false" aria-describedby="token-help">
-                    <div class="token-input-actions">
-                        <button id="token-reveal" class="control-button" type="button" aria-controls="access-token" aria-pressed="false" aria-label="Show token" title="Show token" data-i18n-aria-label="account.show" data-i18n-title="account.show" disabled><svg class="icon" aria-hidden="true"><use href="/static/images/icons.svg#eye"></use></svg></button>
-                        <button id="token-copy" class="control-button" type="button" aria-label="Copy token" title="Copy token" data-i18n-aria-label="account.copy" data-i18n-title="account.copy" disabled><svg class="icon" aria-hidden="true"><use href="/static/images/icons.svg#copy"></use></svg></button>
+            <div id="account-content" hidden>
+                <form id="token-create-form" class="token-create-form">
+                    <div>
+                        <label for="token-name" class="form-label" data-i18n="account.name">Token name</label>
+                        <input id="token-name" class="form-control" name="name" maxlength="100" required autocomplete="off">
                     </div>
-                </div>
-                <div class="token-help"><svg class="icon" aria-hidden="true"><use href="/static/images/icons.svg#shield"></use></svg><p id="token-help" data-i18n="account.help">Keep your token private. Resetting it replaces the previous token.</p></div>
+                    <div>
+                        <label for="token-lifetime" class="form-label" data-i18n="account.lifetime">Expires in</label>
+                        <select id="token-lifetime" class="form-control" name="days">
+                            <option value="7" data-i18n="account.days7">7 days</option>
+                            <option value="30" selected data-i18n="account.days30">30 days</option>
+                            <option value="90" data-i18n="account.days90">90 days</option>
+                            <option value="365" data-i18n="account.days365">365 days</option>
+                        </select>
+                    </div>
+                    <button class="btn action-primary" type="submit" data-i18n="account.create">Create token</button>
+                </form>
+                <section id="token-controls" class="new-token" hidden aria-labelledby="new-token-title">
+                    <h3 id="new-token-title" data-i18n="account.created">Save your new token</h3>
+                    <p id="token-help" data-i18n="account.help">Copy it now. The full token will only be shown once.</p>
+                    <label class="form-label" for="access-token" data-i18n="account.token">Access token</label>
+                    <div class="token-field">
+                        <input id="access-token" class="form-control token-input" type="password" readonly autocomplete="off" spellcheck="false" aria-describedby="token-help">
+                        <div class="token-input-actions">
+                            <button id="token-reveal" class="control-button" type="button" aria-controls="access-token" aria-pressed="false" aria-label="Show token" data-i18n-aria-label="account.show"><svg class="icon" aria-hidden="true"><use href="/static/images/icons.svg#eye"></use></svg></button>
+                            <button id="token-copy" class="control-button" type="button" aria-label="Copy token" data-i18n-aria-label="account.copy"><svg class="icon" aria-hidden="true"><use href="/static/images/icons.svg#copy"></use></svg></button>
+                        </div>
+                    </div>
+                    <button id="token-dismiss" class="btn action-secondary mt-3" type="button" data-i18n="account.dismiss">Done saving</button>
+                </section>
+                <h3 class="tokens-list-heading" data-i18n="account.list">Your tokens</h3>
+                <p id="tokens-empty" class="token-status" data-i18n="account.empty" hidden>No tokens yet.</p>
+                <ul id="tokens-list" class="tokens-list"></ul>
             </div>
             <div class="token-actions account-actions mt-3">
-                <button id="token-reset" class="btn action-secondary" type="button" data-i18n="account.reset" hidden disabled>Reset token</button>
                 <button id="account-retry" class="btn action-secondary" type="button" data-i18n="account.retry" hidden disabled>Try again</button>
-                <button id="account-logout" class="btn action-primary" type="button" data-i18n="access.logout" disabled>Log out</button>
+                <button id="account-logout" class="btn action-secondary" type="button" data-i18n="access.logout" disabled>Log out</button>
             </div>
         </section>
     </main>
