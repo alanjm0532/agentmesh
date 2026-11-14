@@ -42,7 +42,7 @@ func NewRouter(config config.Config, h *handler.Handler, logger *zap.Logger) *gi
 		SameSite: http.SameSiteLaxMode,
 	})
 	registerWebRoutes(router, h, store)
-	registerAPIRoutes(router)
+	registerAPIRoutes(router, h)
 	return router
 }
 
@@ -51,17 +51,36 @@ func registerWebRoutes(router *gin.Engine, h *handler.Handler, store sessions.St
 	registerPages(pages)
 
 	web := router.Group("/web")
-	web.Use(sessions.Sessions("agentmesh_session", store))
+	web.Use(sessions.Sessions("agentmesh_session", store), middleware.WebCSRF(), func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
+		c.Next()
+	})
 	web.POST("/login", h.Login)
 	web.POST("/logout", h.Logout)
 	web.GET("/profile", middleware.SessionAuth(), h.Profile)
-	web.GET("/token", middleware.SessionAuth(), h.Token)
-	web.POST("/token/reset", middleware.SessionAuth(), h.ResetToken)
+	protected := web.Group("", middleware.SessionAuth())
+	protected.GET("/tokens", h.ListTokens)
+	protected.POST("/tokens", h.CreateToken)
+	protected.POST("/tokens/:id/rename", h.RenameToken)
+	protected.POST("/tokens/:id/revoke", h.RevokeToken)
+	protected.GET("/cli/request", h.CLIRequest)
+	protected.POST("/cli/authorize", h.AuthorizeCLI)
 }
 
-func registerAPIRoutes(router *gin.Engine) {
+func registerAPIRoutes(router *gin.Engine, h *handler.Handler) {
 	api := router.Group(protocol.APIPrefix)
 	api.GET(protocol.PingPath, apiPing)
+	auth := api.Group("/auth/device", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
+		c.Next()
+	})
+	auth.POST("/code", h.DeviceCode)
+	auth.POST("/token", h.DeviceToken)
+	protected := api.Group("", h.RequireToken(), func(c *gin.Context) { c.Header("Cache-Control", "no-store"); c.Next() })
+	protected.GET(protocol.MePath, h.Me)
+	protected.POST(protocol.RevokeTokenPath, h.RevokeCurrentToken)
 }
 
 func apiPing(c *gin.Context) {
