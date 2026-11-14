@@ -16,7 +16,7 @@ type Client struct {
 
 func New(server string, timeout time.Duration) *Client {
 	return &Client{
-		http: resty.New().SetBaseURL(server).SetTimeout(timeout),
+		http: resty.New().SetBaseURL(server).SetTimeout(timeout).SetRedirectPolicy(resty.NoRedirectPolicy()),
 	}
 }
 
@@ -29,4 +29,9 @@ func (c *Client) Ping(ctx context.Context) (protocol.PingResponse, error) {
 		return protocol.PingResponse{}, fmt.Errorf("unexpected ping response: message = %q", response.Message)
 	}
 	return response, nil
+}
+
+func (c *Client) WithToken(token string) *Client {
+	c.http.SetAuthToken(token)
+	return c
 }
