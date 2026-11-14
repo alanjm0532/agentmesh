@@ -81,10 +81,7 @@ func (r *TokenRepository) Rename(ctx context.Context, userID, id uuid.UUID, name
 }
 
 func (r *TokenRepository) Revoke(ctx context.Context, userID, id uuid.UUID) (bool, error) {
-	count, err := r.client.UserToken.Update().Where(usertoken.IDEQ(id), usertoken.UserIDEQ(userID), usertoken.StatusIn(usertoken.StatusActive, usertoken.StatusRevoked)).SetStatus(usertoken.StatusRevoked).Save(ctx)
-	if err == nil && count == 0 {
-		return r.client.UserToken.Query().Where(usertoken.IDEQ(id), usertoken.UserIDEQ(userID), usertoken.StatusIn(usertoken.StatusActive, usertoken.StatusRevoked)).Exist(ctx)
-	}
+	count, err := r.client.UserToken.Delete().Where(usertoken.IDEQ(id), usertoken.UserIDEQ(userID), usertoken.StatusIn(usertoken.StatusActive, usertoken.StatusRevoked)).Exec(ctx)
 	return count == 1, err
 }
 
