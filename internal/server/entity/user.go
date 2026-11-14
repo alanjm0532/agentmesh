@@ -13,7 +13,3 @@ type ProfileResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
-
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-}

@@ -13,11 +13,12 @@ import (
 )
 
 type Handler struct {
-	userService *service.UserService
+	userService  *service.UserService
+	tokenService *service.TokenService
 }
 
-func NewHandler(userService *service.UserService) *Handler {
-	return &Handler{userService: userService}
+func NewHandler(userService *service.UserService, tokenService *service.TokenService) *Handler {
+	return &Handler{userService: userService, tokenService: tokenService}
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -72,36 +73,6 @@ func (h *Handler) Logout(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
-}
-
-func (h *Handler) Token(c *gin.Context) {
-	c.Header("Cache-Control", "no-store")
-	user, err := h.userService.Profile(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
-	if ent.IsNotFound(err) {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
-		return
-	}
-	if err != nil {
-		_ = c.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to load token"})
-		return
-	}
-	c.JSON(http.StatusOK, entity.TokenResponse{AccessToken: user.AccessToken})
-}
-
-func (h *Handler) ResetToken(c *gin.Context) {
-	c.Header("Cache-Control", "no-store")
-	user, err := h.userService.ResetAccessToken(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
-	if ent.IsNotFound(err) {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
-		return
-	}
-	if err != nil {
-		_ = c.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to reset token"})
-		return
-	}
-	c.JSON(http.StatusOK, entity.TokenResponse{AccessToken: user.AccessToken})
 }
 
 func saveUserSession(c *gin.Context, user *ent.User) error {

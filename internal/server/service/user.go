@@ -6,7 +6,6 @@ import (
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/repository"
-	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,11 +25,7 @@ func (s *UserService) createUser(ctx context.Context, username, password string)
 		return nil, err
 	}
 
-	accessToken, err := util.GenerateToken()
-	if err != nil {
-		return nil, err
-	}
-	return s.users.Create(ctx, username, string(hashedPassword), accessToken)
+	return s.users.Create(ctx, username, string(hashedPassword))
 }
 
 func (s *UserService) Login(ctx context.Context, username, password string) (*ent.User, error) {
@@ -64,12 +59,4 @@ func (s *UserService) Login(ctx context.Context, username, password string) (*en
 
 func (s *UserService) Profile(ctx context.Context, id uuid.UUID) (*ent.User, error) {
 	return s.users.GetByID(ctx, id)
-}
-
-func (s *UserService) ResetAccessToken(ctx context.Context, id uuid.UUID) (*ent.User, error) {
-	token, err := util.GenerateToken()
-	if err != nil {
-		return nil, err
-	}
-	return s.users.UpdateAccessToken(ctx, id, token)
 }

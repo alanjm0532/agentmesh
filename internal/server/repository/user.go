@@ -24,14 +24,9 @@ func NewUserRepository(client *ent.Client) *UserRepository {
 	return &UserRepository{client: client}
 }
 
-func (r *UserRepository) Create(ctx context.Context, username, hashedPassword, accessToken string) (*ent.User, error) {
+func (r *UserRepository) Create(ctx context.Context, username, hashedPassword string) (*ent.User, error) {
 	return r.client.User.Create().
 		SetUsername(username).
 		SetPassword(hashedPassword).
-		SetAccessToken(accessToken).
 		Save(ctx)
-}
-
-func (r *UserRepository) UpdateAccessToken(ctx context.Context, id uuid.UUID, accessToken string) (*ent.User, error) {
-	return r.client.User.UpdateOneID(id).SetAccessToken(accessToken).Save(ctx)
 }
