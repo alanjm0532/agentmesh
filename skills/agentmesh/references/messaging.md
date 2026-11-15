@@ -19,6 +19,10 @@ History does not change read positions; receive marks successfully output messag
 as read. Use history for general conversation lookups and receive for unread or
 new messages. Use follow mode only when the user asks to keep listening.
 
+After reading messages, present the sender and message body directly. Omit read
+status and internal processing details by default; explain them only when the
+user asks or an operation fails.
+
 ## Send and reply
 
 Use `message send` for both new messages and replies; there is no separate reply
