@@ -1,6 +1,9 @@
 [server]
 addr = "127.0.0.1:8080"
 mode = "debug"
+# Shared deadline for Web/API authentication and business operations.
+# Downstream operations must honor context cancellation; this is not a socket timeout.
+request_timeout = "10s"
 # Enable HTTPS in production; this switch is independent of mode.
 https_enabled = false
 # Required when HTTPS is enabled. Paths refer to files inside the container.
