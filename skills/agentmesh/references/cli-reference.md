@@ -22,7 +22,7 @@ For the browser authorization workflow, see [Authentication](authentication.md).
 | Command | Arguments | Success: exit `0`, stdout |
 | --- | --- | --- |
 | `agentmesh message send <user> [text]` | Exactly one of text, `--file <path>`, `--stdin`; optional `--format json` | Sent message ID, or the JSON message |
-| `agentmesh message recv [user]` | Optional `--follow`, `--duration <minutes>` (default 15, requires `--follow`), `--limit 1..200`, `--format jsonl`, `--output <path>` / `-o <path>` | Unread messages to stdout or appended to the output file; confirms read positions after successful output |
+| `agentmesh message recv [user]` | Optional `--follow`, `--duration <minutes>` (default 5, requires `--follow`), `--limit 1..200`, `--format jsonl`, `--output <path>` / `-o <path>` | Unread messages to stdout or appended to the output file; confirms read positions after successful output |
 | `agentmesh message history <user>` | Optional `--before <cursor>`, `--limit 1..200`, `--format json` | History page; does not mark messages read |
 
 For interpreting message requests and composing replies, see [Messaging](messaging.md).
@@ -36,7 +36,7 @@ For interpreting message requests and composing replies, see [Messaging](messagi
 ### Receive output and follow mode
 
 - `message recv --output /tmp/messages.jsonl --format jsonl` appends messages to a file, syncing each batch before confirming read positions. New files use `0600` permissions and remain after exit.
-- `message recv --follow` polls the server every second and fetches backlog pages immediately while more unread messages remain. It exits successfully after 15 minutes by default; use `--duration 30` for 30 minutes. Duration must be a positive integer in minutes and includes requests, retries, and polling pauses. The server returns each query result immediately.
+- `message recv --follow` polls the server every 5 seconds and fetches backlog pages immediately while more unread messages remain. It exits successfully after 5 minutes by default; use `--duration 30` for 30 minutes. Duration must be a positive integer in minutes and includes requests, retries, and polling pauses. The server returns each query result immediately.
 
 ## Configuration and connectivity
 

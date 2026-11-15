@@ -191,14 +191,14 @@ func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 					}
 					return nil
 				}
-				if !page.HasMore && pauseMessage(ctx, time.Second) != nil {
+				if !page.HasMore && pauseMessage(ctx, 5*time.Second) != nil {
 					return nil
 				}
 			}
 		},
 	}
-	cmd.Flags().BoolVar(&follow, "follow", false, "Poll for new messages every second and reconnect automatically")
-	cmd.Flags().IntVar(&durationMinutes, "duration", 15, "Maximum follow duration in minutes (requires --follow)")
+	cmd.Flags().BoolVar(&follow, "follow", false, "Poll for new messages every 5 seconds and reconnect automatically")
+	cmd.Flags().IntVar(&durationMinutes, "duration", 5, "Maximum follow duration in minutes (requires --follow)")
 	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum messages per batch (1-200)")
 	cmd.Flags().StringVar(&format, "format", "text", "Output format: text or jsonl")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Append received messages to a file instead of stdout")
