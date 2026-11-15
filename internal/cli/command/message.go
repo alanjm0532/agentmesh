@@ -100,7 +100,7 @@ func newSendMessageCommand(cfg *config.Config) *cobra.Command {
 func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 	var follow bool
 	var format, output string
-	var limit int
+	var limit, durationMinutes int
 	cmd := &cobra.Command{
 		Use: "recv [user]", Short: "Receive unread messages and mark successfully output messages as read", Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (resultErr error) {
@@ -109,6 +109,18 @@ func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 			}
 			if err := validMessageLimit(limit); err != nil {
 				return err
+			}
+			if cmd.Flags().Changed("duration") && !follow {
+				return fmt.Errorf("--duration requires --follow")
+			}
+			if durationMinutes < 1 || int64(durationMinutes) > int64((1<<63-1)/time.Minute) {
+				return fmt.Errorf("duration must be a positive number of minutes within the supported time range")
+			}
+			ctx := cmd.Context()
+			if follow {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, time.Duration(durationMinutes)*time.Minute)
+				defer cancel()
 			}
 			writer := cmd.OutOrStdout()
 			var outputFile *os.File
@@ -135,16 +147,19 @@ func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 			api := client.New(cfg.Server, cfg.Timeout).WithToken(cfg.Token)
 			backoff := 200 * time.Millisecond
 			for {
-				page, err := api.UnreadMessages(cmd.Context(), from, limit)
+				if follow && ctx.Err() != nil {
+					return nil
+				}
+				page, err := api.UnreadMessages(ctx, from, limit)
 				if err != nil {
-					if cmd.Context().Err() != nil {
+					if ctx.Err() != nil {
 						return nil
 					}
 					if !follow || !client.Retryable(err) {
 						return err
 					}
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Receive failed; retrying: %v\n", err)
-					if pauseMessage(cmd.Context(), backoff) != nil {
+					if pauseMessage(ctx, backoff) != nil {
 						return nil
 					}
 					backoff = min(backoff*2, 5*time.Second)
@@ -162,7 +177,10 @@ func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 					}
 				}
 				if len(page.ReadPositions) > 0 {
-					if err = util.Retry(cmd.Context(), 3, client.Retryable, func() error { return api.ReadMessages(cmd.Context(), page.ReadPositions) }); err != nil {
+					if err = util.Retry(ctx, 3, client.Retryable, func() error { return api.ReadMessages(ctx, page.ReadPositions) }); err != nil {
+						if follow && ctx.Err() != nil {
+							return nil
+						}
 						return err
 					}
 				}
@@ -173,13 +191,14 @@ func newReceiveMessageCommand(cfg *config.Config) *cobra.Command {
 					}
 					return nil
 				}
-				if !page.HasMore && pauseMessage(cmd.Context(), time.Second) != nil {
+				if !page.HasMore && pauseMessage(ctx, time.Second) != nil {
 					return nil
 				}
 			}
 		},
 	}
 	cmd.Flags().BoolVar(&follow, "follow", false, "Poll for new messages every second and reconnect automatically")
+	cmd.Flags().IntVar(&durationMinutes, "duration", 15, "Maximum follow duration in minutes (requires --follow)")
 	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum messages per batch (1-200)")
 	cmd.Flags().StringVar(&format, "format", "text", "Output format: text or jsonl")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Append received messages to a file instead of stdout")

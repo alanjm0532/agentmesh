@@ -1,4 +1,6 @@
 GO ?= go
+GOOS ?= $(shell $(GO) env GOOS)
+GOARCH ?= $(shell $(GO) env GOARCH)
 APP_NAME := agentmesh
 BIN_DIR := bin
 ARGS ?=
@@ -31,9 +33,9 @@ test: generate ## Generate code and run tests
 
 build: build-cli build-server ## Build the CLI and HTTP server
 
-build-cli: ## Build the CLI: bin/agentmesh
+build-cli: ## Build the CLI for the current platform; override with GOOS=windows/darwin GOARCH=amd64/arm64
 	mkdir -p $(BIN_DIR)
-	$(GO) build -ldflags="-X github.com/alanjm0532/agentmesh/internal/cli/version.Version=$(VERSION)" -o $(BIN_DIR)/$(APP_NAME) ./cmd/agentmesh
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build -ldflags="-X github.com/alanjm0532/agentmesh/internal/cli/version.Version=$(VERSION)" -o $(BIN_DIR)/$(APP_NAME)$(if $(filter windows,$(GOOS)),.exe,) ./cmd/agentmesh
 
 build-server: generate ## Generate Ent and Wire code and build the HTTP server: bin/agentmesh-server
 	mkdir -p $(BIN_DIR)
