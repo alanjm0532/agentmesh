@@ -69,7 +69,7 @@ func registerWebRoutes(router *gin.Engine, h *handler.Handler, store sessions.St
 
 func registerAPIRoutes(router *gin.Engine, h *handler.Handler) {
 	api := router.Group(protocol.APIPrefix)
-	api.GET(protocol.PingPath, apiPing)
+	api.GET(protocol.PingPath, h.APIPing)
 	auth := api.Group("/auth/device", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
@@ -84,8 +84,4 @@ func registerAPIRoutes(router *gin.Engine, h *handler.Handler) {
 	protected.GET(protocol.UnreadMessagesPath, h.UnreadMessages)
 	protected.GET(protocol.MessageHistoryPath, h.MessageHistory)
 	protected.POST(protocol.ReadMessagesPath, h.ReadMessages)
-}
-
-func apiPing(c *gin.Context) {
-	c.JSON(http.StatusOK, protocol.PingResponse{Message: "pong"})
 }

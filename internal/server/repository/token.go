@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/alanjm0532/agentmesh/internal/server/dbutil"
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/ent/usertoken"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
+	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -50,7 +50,7 @@ func (r *TokenRepository) Exchange(ctx context.Context, grant *ent.UserToken, ha
 	if err != nil {
 		return nil, err
 	}
-	defer dbutil.Rollback(tx, r.logger)
+	defer util.Rollback(tx, r.logger)
 	if grant.UserID == nil {
 		return nil, entity.ErrInvalidGrant
 	}

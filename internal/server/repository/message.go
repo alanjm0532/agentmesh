@@ -7,7 +7,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/alanjm0532/agentmesh/internal/protocol"
-	"github.com/alanjm0532/agentmesh/internal/server/dbutil"
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/ent/conversation"
 	"github.com/alanjm0532/agentmesh/internal/server/ent/conversationmember"
@@ -34,7 +33,7 @@ func (r *MessageRepository) Direct(ctx context.Context, a, b uuid.UUID) (*ent.Co
 
 func (r *MessageRepository) Send(ctx context.Context, sender, recipient, clientID uuid.UUID, input protocol.SendMessageRequest) (*ent.Message, error) {
 	var result *ent.Message
-	err := dbutil.Transaction(ctx, r.client, r.logger, func(tx *ent.Tx) error {
+	err := util.Transaction(ctx, r.client, r.logger, func(tx *ent.Tx) error {
 		existing, err := tx.Message.Query().Where(message.SenderIDEQ(sender), message.ClientMessageIDEQ(clientID)).Only(ctx)
 		if err == nil {
 			cv, err := tx.Conversation.Get(ctx, existing.ConversationID)
@@ -116,7 +115,7 @@ func (r *MessageRepository) Read(ctx context.Context, userID uuid.UUID, position
 	sort.Slice(positions, func(i, j int) bool {
 		return positions[i].ConversationID.String() < positions[j].ConversationID.String()
 	})
-	return dbutil.Transaction(ctx, r.client, r.logger, func(tx *ent.Tx) error {
+	return util.Transaction(ctx, r.client, r.logger, func(tx *ent.Tx) error {
 		for _, position := range positions {
 			member, err := tx.ConversationMember.Query().Where(conversationmember.ConversationIDEQ(position.ConversationID), conversationmember.UserIDEQ(userID)).Only(ctx)
 			if ent.IsNotFound(err) {
