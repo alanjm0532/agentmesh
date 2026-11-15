@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/alanjm0532/agentmesh/internal/protocol"
+	"github.com/alanjm0532/agentmesh/internal/server/ctxmeta"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
+	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +21,9 @@ func TokenAuth(tokens *service.TokenService) gin.HandlerFunc {
 			return
 		}
 		token, user, err := tokens.Authenticate(c.Request.Context(), fields[1])
+		if util.HandleContextError(c, err) {
+			return
+		}
 		if errors.Is(err, entity.ErrInvalidToken) {
 			rejectToken(c)
 			return
@@ -28,9 +33,10 @@ func TokenAuth(tokens *service.TokenService) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, protocol.ErrorResponse{Error: "server_error", Message: "Unable to verify token"})
 			return
 		}
-		c.Set("userID", user.ID)
-		c.Set("tokenID", token.ID)
-		c.Set("username", user.Username)
+		ctx := ctxmeta.WithIdentity(c.Request.Context(), ctxmeta.Identity{
+			UserID: user.ID, TokenID: token.ID, Username: user.Username,
+		})
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }

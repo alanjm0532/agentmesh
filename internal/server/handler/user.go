@@ -1,16 +1,17 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
+	"github.com/alanjm0532/agentmesh/internal/server/ctxmeta"
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/service"
 	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -23,14 +24,17 @@ func NewHandler(userService *service.UserService, tokenService *service.TokenSer
 	return &Handler{userService: userService, tokenService: tokenService, messageService: messageService}
 }
 
-func (h *Handler) Login(c *gin.Context) {
+func (h *Handler) Login(ctx context.Context, c *gin.Context) {
 	var input entity.LoginRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
 
-	user, err := h.userService.Login(c.Request.Context(), input.Username, input.Password)
+	user, err := h.userService.Login(ctx, input.Username, input.Password)
+	if util.HandleContextError(c, err) {
+		return
+	}
 	if errors.Is(err, entity.ErrPasswordTooLong) {
 		util.InvalidRequest(c)
 		return
@@ -52,8 +56,11 @@ func (h *Handler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) Profile(c *gin.Context) {
-	user, err := h.userService.Profile(c.Request.Context(), c.MustGet("userID").(uuid.UUID))
+func (h *Handler) Profile(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
+	user, err := h.userService.Profile(ctx, identity.UserID)
+	if util.HandleContextError(c, err) {
+		return
+	}
 	if ent.IsNotFound(err) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not logged in"})
 		return
@@ -66,7 +73,7 @@ func (h *Handler) Profile(c *gin.Context) {
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) Logout(c *gin.Context) {
+func (h *Handler) Logout(ctx context.Context, c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	if err := session.Save(); err != nil {

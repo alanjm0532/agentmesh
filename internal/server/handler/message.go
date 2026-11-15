@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -8,19 +9,19 @@ import (
 	"unicode/utf8"
 
 	"github.com/alanjm0532/agentmesh/internal/protocol"
+	"github.com/alanjm0532/agentmesh/internal/server/ctxmeta"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/alanjm0532/agentmesh/internal/server/util"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/google/uuid"
 )
 
-func (h *Handler) SendMessage(c *gin.Context) {
+func (h *Handler) SendMessage(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
 	var input protocol.SendMessageRequest
 	if !bindMessageJSON(c, &input) {
 		return
 	}
-	result, err := h.messageService.Send(c.Request.Context(), c.MustGet("userID").(uuid.UUID), input)
+	result, err := h.messageService.Send(ctx, identity.UserID, input)
 	if err != nil {
 		messageError(c, err)
 		return
@@ -28,13 +29,13 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *Handler) UnreadMessages(c *gin.Context) {
+func (h *Handler) UnreadMessages(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
 	var input protocol.UnreadMessagesQuery
 	if err := c.ShouldBindQuery(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	result, err := h.messageService.Unread(c.Request.Context(), c.MustGet("userID").(uuid.UUID), input.From, input.Limit)
+	result, err := h.messageService.Unread(ctx, identity.UserID, input.From, input.Limit)
 	if err != nil {
 		messageError(c, err)
 		return
@@ -42,13 +43,13 @@ func (h *Handler) UnreadMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *Handler) MessageHistory(c *gin.Context) {
+func (h *Handler) MessageHistory(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
 	var input protocol.MessageHistoryQuery
 	if err := c.ShouldBindQuery(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	result, err := h.messageService.History(c.Request.Context(), c.MustGet("userID").(uuid.UUID), input.Peer, input.Before, input.Limit)
+	result, err := h.messageService.History(ctx, identity.UserID, input.Peer, input.Before, input.Limit)
 	if err != nil {
 		messageError(c, err)
 		return
@@ -56,12 +57,12 @@ func (h *Handler) MessageHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *Handler) ReadMessages(c *gin.Context) {
+func (h *Handler) ReadMessages(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
 	var input protocol.ReadMessagesRequest
 	if !bindMessageJSON(c, &input) {
 		return
 	}
-	if err := h.messageService.Read(c.Request.Context(), c.MustGet("userID").(uuid.UUID), input); err != nil {
+	if err := h.messageService.Read(ctx, identity.UserID, input); err != nil {
 		messageError(c, err)
 		return
 	}
@@ -78,6 +79,9 @@ func bindMessageJSON(c *gin.Context, input any) bool {
 }
 
 func messageError(c *gin.Context, err error) {
+	if util.HandleContextError(c, err) {
+		return
+	}
 	status := http.StatusInternalServerError
 	message := "Unable to process message request"
 	code := "server_error"

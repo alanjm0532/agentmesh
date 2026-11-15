@@ -41,47 +41,47 @@ func NewRouter(config config.Config, h *handler.Handler, logger *zap.Logger) *gi
 		Secure:   config.Server.SessionSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
-	registerWebRoutes(router, h, store)
-	registerAPIRoutes(router, h)
+	registerWebRoutes(router, h, store, config.Server.RequestTimeout)
+	registerAPIRoutes(router, h, config.Server.RequestTimeout)
 	return router
 }
 
-func registerWebRoutes(router *gin.Engine, h *handler.Handler, store sessions.Store) {
+func registerWebRoutes(router *gin.Engine, h *handler.Handler, store sessions.Store, timeout time.Duration) {
 	pages := router.Group("/")
 	registerPages(pages)
 
 	web := router.Group("/web")
-	web.Use(sessions.Sessions("agentmesh_session", store), middleware.WebCSRF(), func(c *gin.Context) {
+	web.Use(middleware.Timeout(timeout), sessions.Sessions("agentmesh_session", store), middleware.WebCSRF(), func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
 		c.Next()
 	})
-	web.POST("/login", h.Login)
-	web.POST("/logout", h.Logout)
-	web.GET("/profile", middleware.SessionAuth(), h.Profile)
+	web.POST("/login", middleware.Adapt(h.Login))
+	web.POST("/logout", middleware.Adapt(h.Logout))
 	protected := web.Group("", middleware.SessionAuth())
-	protected.GET("/tokens", h.ListTokens)
-	protected.POST("/tokens/:id/rename", h.RenameToken)
-	protected.POST("/tokens/:id/revoke", h.RevokeToken)
-	protected.GET("/cli/request", h.CLIRequest)
-	protected.POST("/cli/authorize", h.AuthorizeCLI)
+	protected.GET("/profile", middleware.AdaptAuthenticated(h.Profile))
+	protected.GET("/tokens", middleware.AdaptAuthenticated(h.ListTokens))
+	protected.POST("/tokens/:id/rename", middleware.AdaptAuthenticated(h.RenameToken))
+	protected.POST("/tokens/:id/revoke", middleware.AdaptAuthenticated(h.RevokeToken))
+	protected.GET("/cli/request", middleware.AdaptAuthenticated(h.CLIRequest))
+	protected.POST("/cli/authorize", middleware.AdaptAuthenticated(h.AuthorizeCLI))
 }
 
-func registerAPIRoutes(router *gin.Engine, h *handler.Handler) {
-	api := router.Group(protocol.APIPrefix)
-	api.GET(protocol.PingPath, h.APIPing)
+func registerAPIRoutes(router *gin.Engine, h *handler.Handler, timeout time.Duration) {
+	api := router.Group(protocol.APIPrefix, middleware.Timeout(timeout))
+	api.GET(protocol.PingPath, middleware.Adapt(h.APIPing))
 	auth := api.Group("/auth/device", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16<<10)
 		c.Next()
 	})
-	auth.POST("/code", h.DeviceCode)
-	auth.POST("/token", h.DeviceToken)
+	auth.POST("/code", middleware.Adapt(h.DeviceCode))
+	auth.POST("/token", middleware.Adapt(h.DeviceToken))
 	protected := api.Group("", h.RequireToken(), func(c *gin.Context) { c.Header("Cache-Control", "no-store"); c.Next() })
-	protected.GET(protocol.MePath, h.Me)
-	protected.POST(protocol.RevokeTokenPath, h.RevokeCurrentToken)
-	protected.POST(protocol.MessagesPath, h.SendMessage)
-	protected.GET(protocol.UnreadMessagesPath, h.UnreadMessages)
-	protected.GET(protocol.MessageHistoryPath, h.MessageHistory)
-	protected.POST(protocol.ReadMessagesPath, h.ReadMessages)
+	protected.GET(protocol.MePath, middleware.AdaptAuthenticated(h.Me))
+	protected.POST(protocol.RevokeTokenPath, middleware.AdaptAuthenticated(h.RevokeCurrentToken))
+	protected.POST(protocol.MessagesPath, middleware.AdaptAuthenticated(h.SendMessage))
+	protected.GET(protocol.UnreadMessagesPath, middleware.AdaptAuthenticated(h.UnreadMessages))
+	protected.GET(protocol.MessageHistoryPath, middleware.AdaptAuthenticated(h.MessageHistory))
+	protected.POST(protocol.ReadMessagesPath, middleware.AdaptAuthenticated(h.ReadMessages))
 }

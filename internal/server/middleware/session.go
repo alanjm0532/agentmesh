@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/alanjm0532/agentmesh/internal/server/ctxmeta"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,11 +18,12 @@ func SessionAuth() gin.HandlerFunc {
 			return
 		}
 		id, err := uuid.Parse(value)
-		if err != nil {
+		if err != nil || id == uuid.Nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid session"})
 			return
 		}
-		c.Set("userID", id)
+		ctx := ctxmeta.WithIdentity(c.Request.Context(), ctxmeta.Identity{UserID: id})
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }
