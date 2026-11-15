@@ -10,8 +10,9 @@ import (
 )
 
 type APIError struct {
-	Status int
-	Code   string
+	Status  int
+	Code    string
+	Message string
 }
 
 func (e *APIError) Error() string {
@@ -20,6 +21,9 @@ func (e *APIError) Error() string {
 	}
 	if e.Status == http.StatusForbidden {
 		return "permission denied"
+	}
+	if e.Message != "" {
+		return fmt.Sprintf("request failed: HTTP %d (%s): %s", e.Status, e.Code, e.Message)
 	}
 	return fmt.Sprintf("request failed: HTTP %d (%s)", e.Status, e.Code)
 }
@@ -42,7 +46,7 @@ func request[T any](ctx context.Context, c *Client, method, path string, body an
 	if resp.StatusCode() < 200 || resp.StatusCode() >= 300 {
 		var response protocol.ErrorResponse
 		_ = json.Unmarshal(resp.Body(), &response)
-		return zero, &APIError{Status: resp.StatusCode(), Code: response.Error}
+		return zero, &APIError{Status: resp.StatusCode(), Code: response.Error, Message: response.Message}
 	}
 	var response T
 	if err = json.Unmarshal(resp.Body(), &response); err != nil {

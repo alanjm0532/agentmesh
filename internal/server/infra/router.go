@@ -80,6 +80,10 @@ func registerAPIRoutes(router *gin.Engine, h *handler.Handler) {
 	protected := api.Group("", h.RequireToken(), func(c *gin.Context) { c.Header("Cache-Control", "no-store"); c.Next() })
 	protected.GET(protocol.MePath, h.Me)
 	protected.POST(protocol.RevokeTokenPath, h.RevokeCurrentToken)
+	protected.POST(protocol.MessagesPath, h.SendMessage)
+	protected.GET(protocol.UnreadMessagesPath, h.UnreadMessages)
+	protected.GET(protocol.MessageHistoryPath, h.MessageHistory)
+	protected.POST(protocol.ReadMessagesPath, h.ReadMessages)
 }
 
 func apiPing(c *gin.Context) {

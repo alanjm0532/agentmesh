@@ -11,4 +11,7 @@ var (
 	ErrExpiredToken         = errors.New("expired_token")
 	ErrInvalidGrant         = errors.New("invalid_grant")
 	ErrInvalidToken         = errors.New("invalid_token")
+	ErrMessageConflict      = errors.New("message_conflict")
+	ErrUserNotFound         = errors.New("user_not_found")
+	ErrConversationAccess   = errors.New("conversation_access_denied")
 )

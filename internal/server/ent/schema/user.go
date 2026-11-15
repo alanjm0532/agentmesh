@@ -28,5 +28,9 @@ func (User) Fields() []ent.Field {
 }
 
 func (User) Edges() []ent.Edge {
-	return []ent.Edge{edge.To("tokens", UserToken.Type)}
+	return []ent.Edge{
+		edge.To("tokens", UserToken.Type),
+		edge.To("conversation_memberships", ConversationMember.Type),
+		edge.To("messages", Message.Type),
+	}
 }

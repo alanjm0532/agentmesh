@@ -53,5 +53,8 @@ func newSQLiteConnector(dsn string) (driver.Connector, error) {
 	}
 	// Preserve repeated pragmas while normalizing timestamp encoding and decoding.
 	params.Set("_timezone", "UTC")
+	// Enforce foreign keys on every connection, including custom DSNs.
+	params.Add("_pragma", "foreign_keys(1)")
+	params.Add("_pragma", "busy_timeout(5000)")
 	return sqlite.NewConnector(name + "?" + params.Encode())
 }

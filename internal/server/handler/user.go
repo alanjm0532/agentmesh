@@ -14,12 +14,13 @@ import (
 )
 
 type Handler struct {
-	userService  *service.UserService
-	tokenService *service.TokenService
+	userService    *service.UserService
+	tokenService   *service.TokenService
+	messageService *service.MessageService
 }
 
-func NewHandler(userService *service.UserService, tokenService *service.TokenService) *Handler {
-	return &Handler{userService: userService, tokenService: tokenService}
+func NewHandler(userService *service.UserService, tokenService *service.TokenService, messageService *service.MessageService) *Handler {
+	return &Handler{userService: userService, tokenService: tokenService, messageService: messageService}
 }
 
 func (h *Handler) Login(c *gin.Context) {
