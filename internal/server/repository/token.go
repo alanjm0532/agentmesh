@@ -4,15 +4,22 @@ import (
 	"context"
 	"time"
 
+	"github.com/alanjm0532/agentmesh/internal/server/dbutil"
 	"github.com/alanjm0532/agentmesh/internal/server/ent"
 	"github.com/alanjm0532/agentmesh/internal/server/ent/usertoken"
 	"github.com/alanjm0532/agentmesh/internal/server/entity"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
-type TokenRepository struct{ client *ent.Client }
+type TokenRepository struct {
+	client *ent.Client
+	logger *zap.Logger
+}
 
-func NewTokenRepository(client *ent.Client) *TokenRepository { return &TokenRepository{client: client} }
+func NewTokenRepository(client *ent.Client, logger *zap.Logger) *TokenRepository {
+	return &TokenRepository{client: client, logger: logger.Named("token_repository")}
+}
 
 func (r *TokenRepository) CreateLogin(ctx context.Context, name, deviceHash, userCode string, expires time.Time) (*ent.UserToken, error) {
 	return r.client.UserToken.Create().SetName(name).SetDeviceCodeHash(deviceHash).SetUserCode(userCode).SetExpiresAt(expires).Save(ctx)
@@ -43,7 +50,7 @@ func (r *TokenRepository) Exchange(ctx context.Context, grant *ent.UserToken, ha
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer dbutil.Rollback(tx, r.logger)
 	if grant.UserID == nil {
 		return nil, entity.ErrInvalidGrant
 	}

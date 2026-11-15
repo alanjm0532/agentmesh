@@ -21,7 +21,7 @@ func (Message) Fields() []ent.Field {
 		field.Int64("seq").Positive().Immutable(),
 		field.UUID("sender_id", uuid.UUID{}).Immutable(),
 		field.UUID("client_message_id", uuid.UUID{}).Immutable(),
-		field.String("encryption_algorithm").MaxLen(100).Default("none").Immutable(),
+		field.String("encryption_algorithm").MaxLen(100).Default(protocol.EncryptionAlgorithmNone.String()).Immutable(),
 		field.String("content_type").MaxLen(100).Default("text/plain").Immutable(),
 		field.Text("body").SchemaType(map[string]string{dialect.MySQL: "longtext"}).Validate(func(s string) error {
 			if !protocol.ValidMessageBody(s) {
