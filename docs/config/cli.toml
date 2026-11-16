@@ -3,3 +3,18 @@ timeout = "5s"
 
 # Saved by agentmesh auth login.
 token = ""
+
+[database]
+# Relative paths are resolved beside this CLI configuration file.
+path = "agentmesh.db"
+
+[feishu]
+# Send a Feishu notification after an AgentMesh message is saved successfully.
+enabled = false
+app_id = ""
+app_secret = ""
+# Add this exact URL to the Feishu app's allowed redirect URLs.
+redirect_uri = "http://localhost:18888/callback"
+
+# Email mappings and user tokens are stored in the CLI SQLite database via Ent.
+# Add a mapping with: agentmesh feishu bind <user> <email>

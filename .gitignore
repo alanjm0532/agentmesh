@@ -17,6 +17,8 @@ wire_gen.go
 # Ent generated code (keep schema sources)
 /internal/server/ent/*
 !/internal/server/ent/schema/
+/internal/cli/ent/*
+!/internal/cli/ent/schema/
 
 # Local SQLite databases
 *.db

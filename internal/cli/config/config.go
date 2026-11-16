@@ -12,9 +12,22 @@ import (
 )
 
 type Config struct {
-	Token   string        `mapstructure:"token"`
-	Server  string        `mapstructure:"server" validate:"required,http_url"`
-	Timeout time.Duration `mapstructure:"timeout" validate:"required,gt=0"`
+	Token    string         `mapstructure:"token"`
+	Server   string         `mapstructure:"server" validate:"required,http_url"`
+	Timeout  time.Duration  `mapstructure:"timeout" validate:"required,gt=0"`
+	Feishu   FeishuConfig   `mapstructure:"feishu"`
+	Database DatabaseConfig `mapstructure:"database"`
+}
+
+type DatabaseConfig struct {
+	Path string `mapstructure:"path"`
+}
+
+type FeishuConfig struct {
+	Enabled     bool   `mapstructure:"enabled"`
+	AppID       string `mapstructure:"app_id"`
+	AppSecret   string `mapstructure:"app_secret"`
+	RedirectURI string `mapstructure:"redirect_uri"`
 }
 
 func (c Config) Validate() error {
@@ -31,6 +44,8 @@ func DefaultPath() (string, error) {
 
 func Load(path string) (Config, error) {
 	v := viper.New()
+	v.SetDefault("feishu.redirect_uri", "http://localhost:18888/callback")
+	v.SetDefault("database.path", "agentmesh.db")
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")
 	if err := v.ReadInConfig(); err != nil {

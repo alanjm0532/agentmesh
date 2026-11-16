@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
 	"github.com/alanjm0532/agentmesh/internal/cli/util"
@@ -36,5 +37,22 @@ func newConfigCommand(_ *config.Config) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(set)
+	cmd.AddCommand(&cobra.Command{
+		Use:   "path",
+		Short: "Print the absolute path of the selected CLI configuration file",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			path, err := util.ResolveConfigPath(cmd)
+			if err != nil {
+				return err
+			}
+			path, err = filepath.Abs(path)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), path)
+			return err
+		},
+	})
 	return cmd
 }
