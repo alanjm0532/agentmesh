@@ -26,7 +26,7 @@ func (s *MessageService) Send(ctx context.Context, sender uuid.UUID, input proto
 	if err != nil || clientID == uuid.Nil || !protocol.ValidMessageBody(input.Body) || input.EncryptionAlgorithm != protocol.EncryptionAlgorithmNone || input.ContentType != "text/plain" {
 		return protocol.Message{}, entity.ErrInvalidRequest
 	}
-	recipient, err := s.peer(ctx, input.Recipient, sender)
+	recipient, err := s.peer(ctx, input.Recipient)
 	if err != nil {
 		return protocol.Message{}, err
 	}
@@ -43,16 +43,13 @@ func (s *MessageService) Send(ctx context.Context, sender uuid.UUID, input proto
 	return result, nil
 }
 
-func (s *MessageService) peer(ctx context.Context, name string, self uuid.UUID) (*ent.User, error) {
+func (s *MessageService) peer(ctx context.Context, name string) (*ent.User, error) {
 	u, err := s.users.GetByUsername(ctx, name)
 	if ent.IsNotFound(err) {
 		return nil, entity.ErrUserNotFound
 	}
 	if err != nil {
 		return nil, err
-	}
-	if u.ID == self {
-		return nil, entity.ErrInvalidRequest
 	}
 	return u, nil
 }
@@ -67,8 +64,9 @@ func (s *MessageService) Unread(ctx context.Context, self uuid.UUID, from string
 		return page, entity.ErrInvalidRequest
 	}
 	var conversationID *uuid.UUID
+	var selfConversation bool
 	if from != "" {
-		peer, err := s.peer(ctx, from, self)
+		peer, err := s.peer(ctx, from)
 		if err != nil {
 			return page, err
 		}
@@ -80,8 +78,9 @@ func (s *MessageService) Unread(ctx context.Context, self uuid.UUID, from string
 			return page, err
 		}
 		conversationID = &cv.ID
+		selfConversation = peer.ID == self
 	}
-	rows, err := s.messages.Unread(ctx, self, conversationID, limit+1)
+	rows, err := s.messages.Unread(ctx, self, conversationID, selfConversation, limit+1)
 	if err != nil {
 		return page, err
 	}
@@ -113,7 +112,7 @@ func (s *MessageService) History(ctx context.Context, self uuid.UUID, name, befo
 	if limit < 1 || limit > protocol.MaxMessagePageSize {
 		return page, entity.ErrInvalidRequest
 	}
-	peer, err := s.peer(ctx, name, self)
+	peer, err := s.peer(ctx, name)
 	if err != nil {
 		return page, err
 	}

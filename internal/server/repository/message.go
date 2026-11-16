@@ -55,10 +55,14 @@ func (r *MessageRepository) Send(ctx context.Context, sender, recipient, clientI
 			if err != nil {
 				return err
 			}
-			_, err = tx.ConversationMember.CreateBulk(
+			members := []*ent.ConversationMemberCreate{
 				tx.ConversationMember.Create().SetConversationID(cv.ID).SetUserID(sender),
-				tx.ConversationMember.Create().SetConversationID(cv.ID).SetUserID(recipient),
-			).Save(ctx)
+			}
+			// 自聊只添加一次成员，避免触发会话成员唯一约束。
+			if sender != recipient {
+				members = append(members, tx.ConversationMember.Create().SetConversationID(cv.ID).SetUserID(recipient))
+			}
+			_, err = tx.ConversationMember.CreateBulk(members...).Save(ctx)
 		}
 		if err != nil {
 			return err
@@ -83,14 +87,26 @@ func (r *MessageRepository) Send(ctx context.Context, sender, recipient, clientI
 	return result, err
 }
 
-func (r *MessageRepository) Unread(ctx context.Context, userID uuid.UUID, conversationID *uuid.UUID, limit int) ([]*ent.Message, error) {
-	q := r.client.Message.Query().Where(message.SenderIDNEQ(userID), func(s *sql.Selector) {
-		members := sql.Table(conversationmember.Table)
-		s.Join(members).On(s.C(message.FieldConversationID), members.C(conversationmember.FieldConversationID))
-		s.Where(sql.And(sql.EQ(members.C(conversationmember.FieldUserID), userID), sql.ColumnsGT(s.C(message.FieldSeq), members.C(conversationmember.FieldLastReadSeq))))
-	})
+func (r *MessageRepository) Unread(ctx context.Context, userID uuid.UUID, conversationID *uuid.UUID, selfConversation bool, limit int) ([]*ent.Message, error) {
+	q := r.client.Message.Query().Where(
+		func(s *sql.Selector) {
+			members := sql.Table(conversationmember.Table)
+			s.Where(sql.Exists(sql.Select(members.C(conversationmember.FieldID)).From(members).Where(sql.And(
+				sql.ColumnsEQ(members.C(conversationmember.FieldConversationID), s.C(message.FieldConversationID)),
+				sql.EQ(members.C(conversationmember.FieldUserID), userID),
+				sql.ColumnsGT(s.C(message.FieldSeq), members.C(conversationmember.FieldLastReadSeq)),
+			))))
+		},
+	)
 	if conversationID != nil {
 		q.Where(message.ConversationIDEQ(*conversationID))
+		// 指定会话时已知是否自聊，无需再通过子查询判断。
+		if !selfConversation {
+			q.Where(message.SenderIDNEQ(userID))
+		}
+	} else {
+		// 查询全部未读时，包含自聊消息并排除发给其他用户的消息。
+		q.Where(message.Or(message.SenderIDNEQ(userID), message.HasConversationWith(conversation.DirectKeyEQ(util.DirectKey(userID, userID)))))
 	}
 	// Every conversation's rows must appear in sequence order, regardless of
 	// clock skew between server instances. No wall-clock cursor is used.
