@@ -8,19 +8,24 @@ VERSION ?= latest
 TEST_ARGS ?=
 
 .DEFAULT_GOAL := help
-.PHONY: init ent wire generate fmt lint test build build-cli build-server run run-cli all help
+.PHONY: init ent ent-server ent-cli wire generate fmt lint test build build-cli build-server run run-cli all help
 
 init: ## Download project dependencies and install golangci-lint
 	$(GO) mod download
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 
-ent: ## Generate Ent database access and migration code
+ent: ent-server ent-cli ## Generate server and CLI Ent database code
+
+ent-server: ## Generate server Ent database access and migration code
 	$(GO) tool ent generate ./internal/server/ent/schema
 
-wire: ent ## Generate Ent and Wire dependency injection code for the server
+ent-cli: ## Generate CLI Ent database access and migration code
+	GOOS= GOARCH= $(GO) tool ent generate --feature sql/upsert ./internal/cli/ent/schema
+
+wire: ent-server ## Generate Ent and Wire dependency injection code for the server
 	$(GO) tool wire ./internal/server
 
-generate: wire ## Generate project code (Ent and Wire)
+generate: ent-cli wire ## Generate project code (Ent and Wire)
 
 fmt: ## Format Go code
 	$(GO) fmt ./...
@@ -33,7 +38,7 @@ test: generate ## Generate code and run tests
 
 build: build-cli build-server ## Build the CLI and HTTP server
 
-build-cli: ## Build the CLI for the current platform; override with GOOS=windows/darwin GOARCH=amd64/arm64
+build-cli: ent-cli ## Build the CLI for the current platform; override with GOOS=windows/darwin GOARCH=amd64/arm64
 	mkdir -p $(BIN_DIR)
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build -ldflags="-X github.com/alanjm0532/agentmesh/internal/cli/version.Version=$(VERSION)" -o $(BIN_DIR)/$(APP_NAME)$(if $(filter windows,$(GOOS)),.exe,) ./cmd/agentmesh
 
@@ -44,7 +49,7 @@ build-server: generate ## Generate Ent and Wire code and build the HTTP server: 
 run: generate ## Generate Ent and Wire code and start the HTTP server
 	$(GO) run ./cmd/server $(ARGS)
 
-run-cli: ## Run the CLI, e.g. make run-cli ARGS="ping"
+run-cli: ent-cli ## Run the CLI, e.g. make run-cli ARGS="ping"
 	$(GO) run ./cmd/agentmesh $(ARGS)
 
 all: build ## Generate code and build

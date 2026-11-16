@@ -85,15 +85,21 @@ func newSendMessageCommand(cfg *config.Config) *cobra.Command {
 				return err
 			}
 			if format == "json" {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+				err = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+			} else {
+				_, err = fmt.Fprintf(cmd.OutOrStdout(), "Sent %s to %s\n", result.ID, args[0])
 			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Sent %s to %s\n", result.ID, args[0])
-			return err
+			if err != nil {
+				return err
+			}
+			notifyFeishu(cmd, cfg, args[0], result)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&file, "file", "", "Read the message body from a file")
 	cmd.Flags().BoolVar(&stdin, "stdin", false, "Read the message body from standard input")
 	cmd.Flags().StringVar(&format, "format", "text", "Output format: text or json")
+	cmd.Flags().Bool("feishu", false, "Override the configured Feishu notification setting (--feishu or --feishu=false)")
 	return cmd
 }
 

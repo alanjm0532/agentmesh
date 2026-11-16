@@ -2,6 +2,8 @@
 
 [Private messaging CLI and protocol](docs/messaging.md)
 
+[CLI Feishu notifications](docs/feishu.md)
+
 ## Install with your AI agent
 
 Copy and send the following prompt to your AI agent:

@@ -25,6 +25,9 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Generate CLI Ent code
+        run: make ent-cli
+
       - name: Build CLI
         shell: bash
         env:

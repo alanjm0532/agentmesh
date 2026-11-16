@@ -12,6 +12,7 @@ require (
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.7.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.13.0
 	github.com/lib/pq v1.12.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
