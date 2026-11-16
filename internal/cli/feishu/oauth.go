@@ -33,15 +33,15 @@ func (c *Client) Login(ctx context.Context, announce func(string)) error {
 		return err
 	}
 	if redirect.Scheme != "http" || !slices.Contains([]string{"localhost", "127.0.0.1", "::1"}, redirect.Hostname()) {
-		return fmt.Errorf("Feishu redirect_uri must use HTTP on localhost or a loopback IP")
+		return fmt.Errorf("feishu redirect_uri must use HTTP on localhost or a loopback IP")
 	}
 	_, port, err := net.SplitHostPort(redirect.Host)
 	if err != nil {
-		return fmt.Errorf("Feishu redirect_uri must include a local port: %w", err)
+		return fmt.Errorf("feishu redirect_uri must include a local port: %w", err)
 	}
 	portNumber, err := strconv.Atoi(port)
 	if err != nil || portNumber < 1 || portNumber > 65535 {
-		return fmt.Errorf("Feishu redirect_uri port must be between 1 and 65535")
+		return fmt.Errorf("feishu redirect_uri port must be between 1 and 65535")
 	}
 	listener, err := net.Listen("tcp", redirect.Host)
 	if err != nil {
@@ -70,7 +70,7 @@ func (c *Client) Login(ctx context.Context, announce func(string)) error {
 		}
 		result := authorizationResult{code: query.Get("code")}
 		if query.Has("error") {
-			result.err = fmt.Errorf("Feishu authorization was denied or failed: %s", query.Get("error"))
+			result.err = fmt.Errorf("feishu authorization was denied or failed: %s", query.Get("error"))
 		}
 		_, _ = fmt.Fprintln(w, "Authorization callback received. Return to the CLI for the result.")
 		select {
@@ -85,9 +85,9 @@ func (c *Client) Login(ctx context.Context, announce func(string)) error {
 	announce(authorizeEndpoint + "?" + parameters.Encode())
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("Feishu login canceled or expired: %w", ctx.Err())
+		return fmt.Errorf("feishu login canceled or expired: %w", ctx.Err())
 	case err = <-serveErrors:
-		return fmt.Errorf("Feishu callback server: %w", err)
+		return fmt.Errorf("feishu callback server: %w", err)
 	case result := <-results:
 		if result.err != nil {
 			return result.err
@@ -132,10 +132,10 @@ func (c *Client) requestToken(ctx context.Context, form map[string]string) (repo
 		return repository.FeishuToken{}, fmt.Errorf("request Feishu user token: %w", err)
 	}
 	if payload.Code == 20049 {
-		return repository.FeishuToken{}, fmt.Errorf("Feishu rejected the PKCE proof (HTTP %d, code 20049); restart agentmesh feishu login and open the complete URL from that attempt, which must start with %s; do not reuse a previous authorization URL or callback", response.StatusCode(), authorizeEndpoint)
+		return repository.FeishuToken{}, fmt.Errorf("feishu rejected the PKCE proof (HTTP %d, code 20049); restart agentmesh feishu login and open the complete URL from that attempt, which must start with %s; do not reuse a previous authorization URL or callback", response.StatusCode(), authorizeEndpoint)
 	}
 	if response.StatusCode() != http.StatusOK || payload.Code != 0 || payload.ExpiresIn <= 0 || payload.RefreshTokenExpiresIn <= 0 {
-		return repository.FeishuToken{}, fmt.Errorf("Feishu token request failed (HTTP %d, code %d, %s): %s; run agentmesh feishu login to reauthorize", response.StatusCode(), payload.Code, payload.Error, payload.ErrorDescription)
+		return repository.FeishuToken{}, fmt.Errorf("feishu token request failed (HTTP %d, code %d, %s): %s; run agentmesh feishu login to reauthorize", response.StatusCode(), payload.Code, payload.Error, payload.ErrorDescription)
 	}
 	return repository.FeishuToken{
 		AccessToken: payload.AccessToken, RefreshToken: payload.RefreshToken,

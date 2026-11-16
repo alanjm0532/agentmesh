@@ -99,7 +99,7 @@ func (r *FeishuRepository) AccessToken(ctx context.Context, refresh func(context
 	// 通用 SQLite 驱动采用 immediate 事务，多进程刷新时先锁定再读取令牌。
 	value, err := tx.FeishuOAuthToken.Query().Where(feishuoauthtoken.ProfileEQ(r.profile), feishuoauthtoken.AppIDEQ(r.appID)).Only(ctx)
 	if ent.IsNotFound(err) {
-		return "", fmt.Errorf("Feishu is not authorized; run agentmesh feishu login")
+		return "", fmt.Errorf("feishu is not authorized; run agentmesh feishu login")
 	}
 	if err != nil {
 		return "", err
@@ -107,7 +107,7 @@ func (r *FeishuRepository) AccessToken(ctx context.Context, refresh func(context
 	accessToken := value.AccessToken
 	if time.Now().Add(time.Minute).Unix() >= value.ExpiresAt {
 		if time.Now().Unix() >= value.RefreshExpiresAt {
-			return "", fmt.Errorf("Feishu authorization expired; run agentmesh feishu login")
+			return "", fmt.Errorf("feishu authorization expired; run agentmesh feishu login")
 		}
 		refreshed, err := refresh(ctx, value.RefreshToken)
 		if err != nil {

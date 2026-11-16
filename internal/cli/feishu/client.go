@@ -62,7 +62,7 @@ func (c *Client) Send(ctx context.Context, username, messageID string) error {
 		return fmt.Errorf("send Feishu message: %w", err)
 	}
 	if response.StatusCode != http.StatusOK || !response.Success() {
-		return fmt.Errorf("Feishu send failed (HTTP %d, code %d): %s; request ID: %s", response.StatusCode, response.Code, response.Msg, response.RequestId())
+		return fmt.Errorf("feishu send failed (HTTP %d, code %d): %s; request ID: %s", response.StatusCode, response.Code, response.Msg, response.RequestId())
 	}
 	return nil
 }
