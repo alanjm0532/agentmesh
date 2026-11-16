@@ -3,20 +3,15 @@ import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
 import { authReturnURL } from '../utils/auth-return.js';
 import { navigate } from '../utils/router.js';
+import { setControlsBusy } from '../utils/form.js';
 
 export function initAuthPanel({ signal }) {
     const form = document.getElementById('auth-form');
     const status = document.getElementById('auth-status');
+    const setBusy = (value) => setControlsBusy(form, value);
     let revision = 0;
     let submitting = false;
     signal.addEventListener('abort', () => { revision++; }, { once: true });
-
-    function setBusy(busy) {
-        form.setAttribute('aria-busy', String(busy));
-        form.querySelectorAll('input, button').forEach((control) => {
-            control.disabled = busy;
-        });
-    }
 
     function renderUser(user) {
         const authenticated = user !== null;

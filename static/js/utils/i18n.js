@@ -20,18 +20,18 @@ export function setText(element, key, params = {}) {
     element.textContent = t(key, params);
 }
 
-export function renderTranslations() {
+export function renderTranslations(root = document) {
     document.documentElement.lang = language;
-    document.querySelectorAll('[data-i18n]').forEach((element) => {
+    root.querySelectorAll('[data-i18n]').forEach((element) => {
         element.textContent = t(element.dataset.i18n, JSON.parse(element.dataset.i18nParams ?? '{}'));
     });
-    document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+    root.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
         element.setAttribute('aria-label', t(element.dataset.i18nAriaLabel));
     });
-    document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+    root.querySelectorAll('[data-i18n-title]').forEach((element) => {
         element.title = t(element.dataset.i18nTitle);
     });
-    document.querySelectorAll('[data-language]').forEach((button) => {
+    root.querySelectorAll('[data-language]').forEach((button) => {
         button.setAttribute('aria-pressed', String(button.dataset.language === language));
     });
 }

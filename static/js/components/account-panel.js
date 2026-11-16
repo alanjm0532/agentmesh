@@ -1,7 +1,8 @@
 import { currentUser, invalidateCurrentUser, logout } from '../services/user-service.js';
-import { listTokens, updateTokenName, disableToken } from '../services/token-service.js';
+import { listTokens, renameToken, revokeToken } from '../services/token-service.js';
 import { clearNotice, showNotice } from '../utils/notice.js';
-import { setText } from '../utils/i18n.js';
+import { renderTranslations, setText } from '../utils/i18n.js';
+import { setControlsBusy } from '../utils/form.js';
 import { confirmAction } from '../utils/confirm-dialog.js';
 import { formatDateTime } from '../utils/time.js';
 import { navigate } from '../utils/router.js';
@@ -12,15 +13,11 @@ export function initAccountPanel({ signal }) {
     const content = document.getElementById('account-content');
     const list = document.getElementById('tokens-list');
     const retry = document.getElementById('account-retry');
+    const template = document.getElementById('token-item-template');
+    const setBusy = (value) => setControlsBusy(panel, value);
+    let accountID;
     let revision = 0;
     signal.addEventListener('abort', () => { revision++; }, { once: true });
-
-    function setBusy(value) {
-        panel.setAttribute('aria-busy', String(value));
-        panel.querySelectorAll('button, input').forEach((control) => {
-            control.disabled = value || control.dataset.unavailable === 'true';
-        });
-    }
 
     function handleError(error) {
         if (error?.status === 401) {
@@ -32,69 +29,52 @@ export function initAccountPanel({ signal }) {
         showNotice(error?.key, 'danger', error?.params);
     }
 
-    function translated(tag, key) {
-        const element = document.createElement(tag);
-        setText(element, key);
-        return element;
-    }
-
-    function renderTokens(tokens) {
+    function renderTokens(tokens, savedTokenID) {
+        // Preserve edits across refreshes, except for the name just saved.
+        const drafts = new Map();
+        list.querySelectorAll('.token-entry').forEach((row) => {
+            const input = row.querySelector('input');
+            if (row.dataset.tokenId !== savedTokenID && input.value !== input.defaultValue) {
+                drafts.set(row.dataset.tokenId, input.value);
+            }
+        });
         list.replaceChildren();
         document.getElementById('tokens-empty').hidden = tokens.length !== 0;
         tokens.forEach((item) => {
-            const row = document.createElement('li');
-            row.className = 'token-entry';
-            const edit = document.createElement('form');
-            edit.className = 'token-edit-form';
-            const label = translated('label', 'account.name');
+            const row = template.content.firstElementChild.cloneNode(true);
+            row.dataset.tokenId = item.id;
+            const edit = row.querySelector('form');
+            const label = row.querySelector('label');
             label.htmlFor = `name-${item.id}`;
-            label.className = 'visually-hidden';
-            const input = document.createElement('input');
+            const input = row.querySelector('input');
             input.id = label.htmlFor;
-            input.className = 'form-control';
-            input.value = item.name;
-            input.required = true;
-            input.maxLength = 100;
-            input.autocomplete = 'off';
-            const save = translated('button', 'account.save');
-            save.className = 'btn action-secondary';
-            save.type = 'submit';
-            edit.append(label, input, save);
+            input.defaultValue = item.name;
+            input.value = drafts.get(item.id) ?? item.name;
             edit.addEventListener('submit', (event) => {
                 event.preventDefault();
-                const name = input.value.trim();
-                if (!name) { input.focus(); return; }
-                run(() => updateTokenName(item.id, name), 'account.saved');
+                run(() => renameToken(item.id, input.value.trim()), 'account.saved', item.id);
             });
-            const badge = translated('span', `account.status.${item.status}`);
+            const badge = row.querySelector('.token-badge');
+            setText(badge, `account.status.${item.status}`);
             badge.className = `token-badge token-badge-${item.status}`;
-            const details = document.createElement('dl');
-            details.className = 'token-metadata';
-            for (const [key, value] of [['account.createdAt', item.created_at], ['account.expires', item.expires_at]]) {
-                const group = document.createElement('div');
-                const description = document.createElement('dd');
-                const time = document.createElement('time');
+            row.querySelectorAll('time').forEach((time) => {
+                const value = item[time.dataset.field];
                 time.dateTime = value;
                 time.textContent = formatDateTime(value);
-                description.append(time);
-                group.append(translated('dt', key), description);
-                details.append(group);
-            }
-            const revoke = translated('button', 'account.revoke');
-            revoke.className = 'btn action-secondary token-revoke';
-            revoke.type = 'button';
+            });
+            const revoke = row.querySelector('.token-revoke');
             if (item.status !== 'active') { revoke.disabled = true; revoke.dataset.unavailable = 'true'; }
             revoke.addEventListener('click', async () => {
                 const confirmed = await confirmAction({ title: 'account.revoke', message: 'account.revokeConfirm', confirm: 'account.revoke', signal });
                 if (!confirmed || signal.aborted) return;
-                run(() => disableToken(item.id), 'account.revoked');
+                run(() => revokeToken(item.id), 'account.revoked');
             });
-            row.append(edit, revoke, badge, details);
+            renderTranslations(row);
             list.append(row);
         });
     }
 
-    async function run(action, successKey) {
+    async function run(action, successKey, savedTokenID) {
         const current = revision;
         clearNotice();
         setBusy(true);
@@ -103,7 +83,7 @@ export function initAccountPanel({ signal }) {
             if (current !== revision) return;
             const tokens = await listTokens();
             if (current !== revision) return;
-            renderTokens(tokens);
+            renderTokens(tokens, savedTokenID);
             showNotice(successKey, 'success');
             retry.hidden = true;
         } catch (error) {
@@ -125,6 +105,12 @@ export function initAccountPanel({ signal }) {
             const user = await currentUser({ refresh });
             if (current !== revision) return;
             if (user === null) { content.hidden = true; navigate('/?page=login', { replace: true }); return; }
+            if (accountID !== user.id) {
+                // Never carry token drafts into a different browser session's account.
+                list.replaceChildren();
+                content.hidden = true;
+                accountID = user.id;
+            }
             setText(status, 'access.authenticated', { username: user.username });
             const tokens = await listTokens();
             if (current !== revision) return;

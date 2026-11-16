@@ -1,10 +1,11 @@
 import { currentUser, invalidateCurrentUser } from '../services/user-service.js';
-import { pendingCLIRequest, decideCLIRequest } from '../services/token-service.js';
+import { fetchCLIRequest, authorizeCLI } from '../services/token-service.js';
 import { clearNotice, showNotice } from '../utils/notice.js';
 import { setText } from '../utils/i18n.js';
 import { loginForCurrentPage } from '../utils/auth-return.js';
 import { formatDateTime } from '../utils/time.js';
 import { navigate } from '../utils/router.js';
+import { setControlsBusy } from '../utils/form.js';
 
 export function initCLIAuthPanel({ signal }) {
     const panel = document.getElementById('cli-panel');
@@ -13,17 +14,13 @@ export function initCLIAuthPanel({ signal }) {
     const details = document.getElementById('cli-request');
     const code = document.getElementById('cli-code');
     const retry = document.getElementById('cli-retry');
+    const busy = (value) => setControlsBusy(panel, value);
     let ready = false;
     let revision = 0;
     let expiresAt;
     let finished = false;
     signal.addEventListener('abort', () => { revision++; ready = false; }, { once: true });
     code.value = new URLSearchParams(window.location.search).get('user_code') ?? '';
-
-    function busy(value) {
-        panel.setAttribute('aria-busy', String(value));
-        panel.querySelectorAll('button, input').forEach((control) => { control.disabled = value; });
-    }
 
     function handleError(error) {
         ready = false;
@@ -48,7 +45,7 @@ export function initCLIAuthPanel({ signal }) {
             if (!user) { navigate(loginForCurrentPage(), { replace: true }); return; }
             setText(status, 'access.authenticated', { username: user.username });
             if (!code.value.trim()) { form.hidden = false; return; }
-            const request = await pendingCLIRequest(code.value.trim().toLowerCase());
+            const request = await fetchCLIRequest(code.value.trim().toLowerCase());
             if (current !== revision) return;
             code.value = request.user_code;
             document.getElementById('cli-name').textContent = request.name;
@@ -71,7 +68,7 @@ export function initCLIAuthPanel({ signal }) {
         busy(true);
         clearNotice();
         try {
-            await decideCLIRequest(code.value, approve);
+            await authorizeCLI(code.value, approve);
             if (current !== revision) return;
             ready = false;
             details.hidden = true;

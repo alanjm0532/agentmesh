@@ -33,6 +33,7 @@
 
 body {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     background: radial-gradient(ellipse at 90% 20%, var(--app-glow), transparent 45%), var(--app-background);
@@ -459,7 +460,7 @@ button:focus-visible, a:focus-visible {
 }
 
 @media (min-width: 901px) {
-    body { height: 100dvh; min-height: 0; }
+    body:has(.home-main) { height: 100dvh; min-height: 0; }
     .site-header, .site-footer { flex-shrink: 0; }
     .header-inner { min-height: clamp(56px, 9vh, 84px); }
     .site-footer { padding-block: clamp(10px, 1.8vh, 20px); }
@@ -475,7 +476,7 @@ button:focus-visible, a:focus-visible {
     .orbit-two { width: min(44vh, 460px); height: min(28vh, 290px); }
     .label-one { top: 12px; }
     .label-two { bottom: 8px; }
-    .access-main { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding-block: clamp(12px, 2vh, 28px); }
+    .access-main { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding-block: clamp(12px, 2vh, 28px); }
     .access-heading { margin-bottom: clamp(16px, 2.5vh, 28px); }
     .access-symbol { width: 44px; height: 44px; margin-bottom: 12px; }
     .access-title { font-size: clamp(24px, min(3vw, 4vh), 36px); margin: 8px 0 12px; }
@@ -509,13 +510,12 @@ button:focus-visible, a:focus-visible {
 }
 
 @media (min-width: 901px) and (max-height: 580px) {
-    .access-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px 32px; align-items: center; }
+    .access-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: auto auto; gap: 12px 32px; align-items: center; max-width: 1080px; }
     .access-heading { grid-column: 1; grid-row: 2; margin: 0; }
     .hero { grid-template-columns: 1fr; }
     .hero-art { display: none; }
     .token-card { grid-column: 2; grid-row: 2; }
     .access-main > .alert { grid-column: 1 / -1; grid-row: 1; margin: 0; }
-    .access-main { max-width: 1080px; }
     .access-heading { text-align: left; }
 }
 
@@ -556,8 +556,7 @@ button:focus-visible, a:focus-visible {
     *, *::before, *::after { transition: none !important; }
 }
 
-/* Token lists grow with the account rather than being constrained to one viewport. */
-body:has(.tokens-main), body:has(#cli-panel) { height: auto; min-height: 100dvh; }
+/* Account content uses a compact layout that grows with the token list. */
 .tokens-main.access-main { display: block; flex: 1 0 auto; max-width: 880px; padding-block: 24px; }
 .tokens-main .access-heading { text-align: left; margin-bottom: 16px; }
 .tokens-main .access-title { font-size: 26px; margin: 0 0 6px; }
@@ -570,8 +569,7 @@ body:has(.tokens-main), body:has(#cli-panel) { height: auto; min-height: 100dvh;
 .tokens-main .btn { min-height: 36px; padding: 7px 12px; border-radius: 8px; font-size: 12px; }
 .tokens-main .account-actions { justify-content: flex-end; }
 .tokens-main .account-actions > .btn { flex: 0 0 auto; }
-.tokens-list-heading { font-size: 14px; font-weight: 650; }
-.tokens-list-heading { margin-block: 20px 10px; }
+.tokens-list-heading { font-size: 14px; font-weight: 650; margin-block: 20px 10px; }
 .tokens-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .token-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; padding: 12px; background: var(--app-soft); border: 1px solid var(--app-border); border-radius: 10px; }
 .token-edit-form { display: grid; grid-column: 1; grid-row: 1; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; min-width: 0; align-items: center; }

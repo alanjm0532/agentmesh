@@ -115,6 +115,22 @@
     </main>
     </template>
 
+    <template id="token-item-template">
+        <li class="token-entry">
+            <form class="token-edit-form">
+                <label class="visually-hidden" data-i18n="account.name">Token name</label>
+                <input class="form-control" required maxlength="100" autocomplete="off">
+                <button class="btn action-secondary" type="submit" data-i18n="account.save">Save name</button>
+            </form>
+            <button class="btn action-secondary token-revoke" type="button" data-i18n="account.revoke">Revoke</button>
+            <span class="token-badge"></span>
+            <dl class="token-metadata">
+                <div><dt data-i18n="account.createdAt">Created</dt><dd><time data-field="created_at"></time></dd></div>
+                <div><dt data-i18n="account.expires">Expires</dt><dd><time data-field="expires_at"></time></dd></div>
+            </dl>
+        </li>
+    </template>
+
     <template id="cli-login-page">
     <main id="page-content" class="site-container access-main">
         <header class="access-heading">
