@@ -6,14 +6,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/alanjm0532/agentmesh/internal/cli/client"
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
 	"github.com/alanjm0532/agentmesh/internal/cli/feishu"
 	"github.com/alanjm0532/agentmesh/internal/cli/repository"
 	"github.com/alanjm0532/agentmesh/internal/cli/storage"
 	"github.com/alanjm0532/agentmesh/internal/cli/util"
 	"github.com/alanjm0532/agentmesh/internal/protocol"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +21,7 @@ func init() {
 
 func newFeishuCommand(cfg *config.Config) *cobra.Command {
 	cmd := &cobra.Command{Use: "feishu", Short: "Manage local Feishu authorization and email mappings", Args: cobra.NoArgs}
-	cmd.AddCommand(newFeishuLoginCommand(cfg), newFeishuResendCommand(cfg))
+	cmd.AddCommand(newFeishuLoginCommand(cfg))
 	cmd.AddCommand(&cobra.Command{
 		Use: "bind <user> <email>", Short: "Save an AgentMesh username to Feishu email mapping in local SQLite", Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -124,57 +122,6 @@ func newFeishuLoginCommand(cfg *config.Config) *cobra.Command {
 	return cmd
 }
 
-func newFeishuResendCommand(cfg *config.Config) *cobra.Command {
-	return &cobra.Command{
-		Use: "resend <user> <message-id>", Short: "Send an existing outgoing AgentMesh message to Feishu only", Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := messageOptions(cfg, "text", "text"); err != nil {
-				return err
-			}
-			messageID, err := uuid.Parse(args[1])
-			if err != nil {
-				return fmt.Errorf("invalid AgentMesh message ID: %w", err)
-			}
-			api := client.New(cfg.Server, cfg.Timeout).WithToken(cfg.Token)
-			self, err := api.Me(cmd.Context())
-			if err != nil {
-				return err
-			}
-			message, err := findFeishuMessage(cmd.Context(), api, args[0], self.ID, messageID.String())
-			if err != nil {
-				return err
-			}
-			if err = sendFeishu(cmd, cfg, args[0], message); err != nil {
-				return err
-			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Sent AgentMesh message %s to Feishu\n", message.ID)
-			return err
-		},
-	}
-}
-
-func findFeishuMessage(ctx context.Context, api *client.Client, peer, senderID, messageID string) (protocol.Message, error) {
-	before := ""
-	for {
-		page, err := api.MessageHistory(ctx, peer, before, protocol.MaxMessagePageSize)
-		if err != nil {
-			return protocol.Message{}, err
-		}
-		for _, message := range page.Messages {
-			if message.ID == messageID {
-				if message.SenderID != senderID {
-					return protocol.Message{}, fmt.Errorf("only your own outgoing messages can be sent to Feishu")
-				}
-				return message, nil
-			}
-		}
-		if !page.HasMore {
-			return protocol.Message{}, fmt.Errorf("message %s was not found in the conversation with %s", messageID, peer)
-		}
-		before = page.NextCursor
-	}
-}
-
 func openFeishuRepository(cmd *cobra.Command, cfg *config.Config) (*repository.FeishuRepository, func(), error) {
 	path, err := util.ResolveConfigPath(cmd)
 	if err != nil {
@@ -198,7 +145,7 @@ func sendFeishu(cmd *cobra.Command, cfg *config.Config, recipient string, messag
 		return err
 	}
 	defer cleanup()
-	return feishu.New(cfg.Feishu, store, cfg.Timeout).Send(cmd.Context(), recipient, message)
+	return feishu.New(cfg.Feishu, store, cfg.Timeout).Send(cmd.Context(), recipient, message.ID)
 }
 
 func notifyFeishu(cmd *cobra.Command, cfg *config.Config, recipient string, message protocol.Message) {
@@ -211,7 +158,7 @@ func notifyFeishu(cmd *cobra.Command, cfg *config.Config, recipient string, mess
 	}
 	if err := sendFeishu(cmd, cfg, recipient, message); err != nil {
 		// 主消息已经发送成功，辅助通知失败只输出警告，避免调用方重试主消息。
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "AgentMesh message %s was sent, but Feishu notification failed: %v\nRetry Feishu only with the same --config selection: agentmesh feishu resend %q %q\n", message.ID, err, recipient, message.ID)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "AgentMesh message %s was sent, but Feishu notification failed: %v\n", message.ID, err)
 		return
 	}
 	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Feishu notification sent.")

@@ -44,6 +44,7 @@ path = "agentmesh.db"
 enabled = true
 app_id = "cli_your_app_id"
 app_secret = "your_app_secret"
+notification_text = "You have a new message on AgentMesh. Please check it."
 redirect_uri = "http://localhost:18888/callback"
 ```
 
@@ -54,8 +55,18 @@ enable the app's bot capability and the `im:message`,
 allow the configured redirect URL. App availability and communication rules
 must permit the intended recipients.
 
+`feishu.notification_text` configures the literal reminder sent to Feishu. It
+defaults to `You have a new message on AgentMesh. Please check it.` when omitted.
+AgentMesh message bodies are never included in the
+Feishu notification, and the text is not expanded as a template.
+
 Use `agentmesh feishu login` to authorize the sending user. The CLI uses PKCE and
-a local browser callback. Add recipient mappings with
+a local browser callback. Authorization uses
+`https://accounts.feishu.cn/oauth/v3/authorize`, paired with the v3 token endpoint.
+For error `20049` (`PKCE code challenge failed`), restart login with the updated
+CLI and open the complete URL from that attempt. Do not reuse previous login
+URLs or callbacks; each attempt has a different verifier.
+Add recipient mappings with
 `agentmesh feishu bind <user> <email>`; mappings are kept in a new
 `feishu_account_mappings` SQLite table, not in the configuration file.
 SQLite is shared CLI storage managed through Ent. `database.path` defaults to
@@ -67,6 +78,6 @@ and App ID. Moving the configuration file requires authorizing again.
 
 The default is disabled. `message send --feishu` or `--feishu=false` overrides the
 configured setting for one send. Reuse the same `--config` selection across
-authorization, binding, sending, and resending. See the
+authorization, binding, and sending. See the
 [CLI reference](cli-reference.md#feishu-notifications) for commands and partial
 delivery behavior.

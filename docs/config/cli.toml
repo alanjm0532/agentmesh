@@ -13,6 +13,8 @@ path = "agentmesh.db"
 enabled = false
 app_id = ""
 app_secret = ""
+# Only this notification text is sent to Feishu; the message body stays in AgentMesh.
+notification_text = "You have a new message on AgentMesh. Please check it."
 # Add this exact URL to the Feishu app's allowed redirect URLs.
 redirect_uri = "http://localhost:18888/callback"
 

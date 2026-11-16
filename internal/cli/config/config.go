@@ -24,10 +24,11 @@ type DatabaseConfig struct {
 }
 
 type FeishuConfig struct {
-	Enabled     bool   `mapstructure:"enabled"`
-	AppID       string `mapstructure:"app_id"`
-	AppSecret   string `mapstructure:"app_secret"`
-	RedirectURI string `mapstructure:"redirect_uri"`
+	Enabled          bool   `mapstructure:"enabled"`
+	AppID            string `mapstructure:"app_id"`
+	AppSecret        string `mapstructure:"app_secret"`
+	RedirectURI      string `mapstructure:"redirect_uri"`
+	NotificationText string `mapstructure:"notification_text"`
 }
 
 func (c Config) Validate() error {
@@ -45,6 +46,7 @@ func DefaultPath() (string, error) {
 func Load(path string) (Config, error) {
 	v := viper.New()
 	v.SetDefault("feishu.redirect_uri", "http://localhost:18888/callback")
+	v.SetDefault("feishu.notification_text", "You have a new message on AgentMesh. Please check it.")
 	v.SetDefault("database.path", "agentmesh.db")
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")

@@ -18,7 +18,8 @@ import (
 	"github.com/alanjm0532/agentmesh/internal/cli/repository"
 )
 
-const authorizeEndpoint = "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
+// 授权和换取令牌使用配套的 v3 入口，确保授权码携带 PKCE challenge。
+const authorizeEndpoint = "https://accounts.feishu.cn/oauth/v3/authorize"
 const tokenEndpoint = "https://accounts.feishu.cn/oauth/v3/token"
 
 type authorizationResult struct {
@@ -129,6 +130,9 @@ func (c *Client) requestToken(ctx context.Context, form map[string]string) (repo
 	response, err := c.http.R().SetContext(ctx).SetFormData(form).SetResult(&payload).SetError(&payload).Post(tokenEndpoint)
 	if err != nil {
 		return repository.FeishuToken{}, fmt.Errorf("request Feishu user token: %w", err)
+	}
+	if payload.Code == 20049 {
+		return repository.FeishuToken{}, fmt.Errorf("Feishu rejected the PKCE proof (HTTP %d, code 20049); restart agentmesh feishu login and open the complete URL from that attempt, which must start with %s; do not reuse a previous authorization URL or callback", response.StatusCode(), authorizeEndpoint)
 	}
 	if response.StatusCode() != http.StatusOK || payload.Code != 0 || payload.ExpiresIn <= 0 || payload.RefreshTokenExpiresIn <= 0 {
 		return repository.FeishuToken{}, fmt.Errorf("Feishu token request failed (HTTP %d, code %d, %s): %s; run agentmesh feishu login to reauthorize", response.StatusCode(), payload.Code, payload.Error, payload.ErrorDescription)

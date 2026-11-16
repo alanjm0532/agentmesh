@@ -46,7 +46,6 @@ For interpreting message requests and composing replies, see [Messaging](messagi
 | `agentmesh feishu bind <user> <email>` | Exact AgentMesh username and Feishu email | Mapping saved in local SQLite |
 | `agentmesh feishu bindings` | None | Username and email pairs for the configured server and app |
 | `agentmesh feishu unbind <user>` | Exact AgentMesh username | Mapping removed |
-| `agentmesh feishu resend <user> <message-id>` | Existing outgoing message in this conversation | Sent to Feishu only |
 | `agentmesh feishu logout` | None | Local user tokens removed; authorization grant in Feishu is not revoked |
 
 Read [Configuration](configuration.md#feishu-notifications) for app settings.
@@ -55,10 +54,13 @@ configuration; recipient mappings and user tokens use the CLI's shared SQLite
 database through Ent (`database.path`, default `agentmesh.db` beside the config).
 Reuse the same `--config` file for all related commands.
 
+Feishu receives only the reminder configured by `feishu.notification_text`,
+defaulting to `You have a new message on AgentMesh. Please check it.`. Message bodies are not sent
+to Feishu.
+
 If AgentMesh sends successfully but the Feishu notification fails, `message send`
-still exits `0` and prints a warning on stderr. Use `feishu resend` to retry only
-the notification. Feishu deduplication lasts one hour; a later resend may deliver
-another copy. Explicit `feishu` command failures exit `1`.
+still exits `0` and prints a warning on stderr. Explicit `feishu` command failures
+exit `1`.
 
 ## Configuration and connectivity
 

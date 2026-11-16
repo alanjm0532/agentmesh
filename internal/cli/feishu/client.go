@@ -10,7 +10,6 @@ import (
 
 	"github.com/alanjm0532/agentmesh/internal/cli/config"
 	"github.com/alanjm0532/agentmesh/internal/cli/repository"
-	"github.com/alanjm0532/agentmesh/internal/protocol"
 	"github.com/go-resty/resty/v2"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
@@ -39,7 +38,7 @@ func New(cfg config.FeishuConfig, store *repository.FeishuRepository, timeout ti
 	return &Client{config: cfg, store: store, http: resty.NewWithClient(httpClient), im: larkim.New(sdkConfig)}
 }
 
-func (c *Client) Send(ctx context.Context, username string, message protocol.Message) error {
+func (c *Client) Send(ctx context.Context, username, messageID string) error {
 	email, err := c.store.Email(ctx, username)
 	if err != nil {
 		return err
@@ -48,15 +47,16 @@ func (c *Client) Send(ctx context.Context, username string, message protocol.Mes
 	if err != nil {
 		return err
 	}
+	// 飞书只发送配置中的提醒文案，消息 ID 仅用于请求去重。
 	content, err := json.Marshal(struct {
 		Text string `json:"text"`
-	}{Text: message.Body})
+	}{Text: c.config.NotificationText})
 	if err != nil {
 		return err
 	}
 	request := larkim.NewCreateMessageReqBuilder().ReceiveIdType("email").
 		Body(larkim.NewCreateMessageReqBodyBuilder().ReceiveId(email).MsgType("text").
-			Content(string(content)).Uuid(message.ID).Build()).Build()
+			Content(string(content)).Uuid(messageID).Build()).Build()
 	response, err := c.im.Message.Create(ctx, request, larkcore.WithUserAccessToken(accessToken))
 	if err != nil {
 		return fmt.Errorf("send Feishu message: %w", err)
