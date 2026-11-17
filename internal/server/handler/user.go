@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -24,14 +23,14 @@ func NewHandler(userService *service.UserService, tokenService *service.TokenSer
 	return &Handler{userService: userService, tokenService: tokenService, messageService: messageService}
 }
 
-func (h *Handler) Login(ctx context.Context, c *gin.Context) {
+func (h *Handler) Login(c *gin.Context) {
 	var input entity.LoginRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
 
-	user, err := h.userService.Login(ctx, input.Username, input.Password)
+	user, err := h.userService.Login(c, input.Username, input.Password)
 	if util.HandleContextError(c, err) {
 		return
 	}
@@ -56,8 +55,8 @@ func (h *Handler) Login(ctx context.Context, c *gin.Context) {
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) Profile(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
-	user, err := h.userService.Profile(ctx, identity.UserID)
+func (h *Handler) Profile(c *gin.Context, identity ctxmeta.Identity) {
+	user, err := h.userService.Profile(c, identity.UserID)
 	if util.HandleContextError(c, err) {
 		return
 	}
@@ -73,7 +72,7 @@ func (h *Handler) Profile(ctx context.Context, c *gin.Context, identity ctxmeta.
 	c.JSON(http.StatusOK, profileResponse(user))
 }
 
-func (h *Handler) Logout(ctx context.Context, c *gin.Context) {
+func (h *Handler) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	if err := session.Save(); err != nil {

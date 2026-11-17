@@ -3,7 +3,6 @@ package config
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
@@ -16,14 +15,13 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Addr           string        `mapstructure:"addr" validate:"notblank"`
-	Mode           string        `mapstructure:"mode" validate:"oneof=debug release test"`
-	RequestTimeout time.Duration `mapstructure:"request_timeout" validate:"gt=0"`
-	HTTPSEnabled   bool          `mapstructure:"https_enabled"`
-	TLSCertFile    string        `mapstructure:"tls_cert_file" validate:"required_if=HTTPSEnabled true"`
-	TLSKeyFile     string        `mapstructure:"tls_key_file" validate:"required_if=HTTPSEnabled true"`
-	SessionSecret  string        `mapstructure:"session_secret" validate:"min=32"`
-	SessionSecure  bool          `mapstructure:"session_secure"`
+	Addr          string `mapstructure:"addr" validate:"notblank"`
+	Mode          string `mapstructure:"mode" validate:"oneof=debug release test"`
+	HTTPSEnabled  bool   `mapstructure:"https_enabled"`
+	TLSCertFile   string `mapstructure:"tls_cert_file" validate:"required_if=HTTPSEnabled true"`
+	TLSKeyFile    string `mapstructure:"tls_key_file" validate:"required_if=HTTPSEnabled true"`
+	SessionSecret string `mapstructure:"session_secret" validate:"min=32"`
+	SessionSecure bool   `mapstructure:"session_secure"`
 }
 
 type DatabaseConfig struct {
@@ -43,7 +41,6 @@ func (c Config) Validate() error {
 func Load(path string) (Config, error) {
 	// Read configuration from the specified TOML file.
 	v := viper.New()
-	v.SetDefault("server.request_timeout", "10s")
 	v.SetConfigFile(path)
 	v.SetConfigType("toml")
 	if err := v.ReadInConfig(); err != nil {

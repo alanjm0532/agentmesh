@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -16,14 +15,14 @@ import (
 
 func (h *Handler) RequireToken() gin.HandlerFunc { return middleware.TokenAuth(h.tokenService) }
 
-func (h *Handler) DeviceCode(ctx context.Context, c *gin.Context) {
+func (h *Handler) DeviceCode(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	var input protocol.DeviceCodeRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	response, err := h.tokenService.StartLogin(ctx, input.Name)
+	response, err := h.tokenService.StartLogin(c, input.Name)
 	if err != nil {
 		tokenError(c, err)
 		return
@@ -31,14 +30,14 @@ func (h *Handler) DeviceCode(ctx context.Context, c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) DeviceToken(ctx context.Context, c *gin.Context) {
+func (h *Handler) DeviceToken(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	var input protocol.DeviceTokenRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	response, err := h.tokenService.Exchange(ctx, input.DeviceCode)
+	response, err := h.tokenService.Exchange(c, input.DeviceCode)
 	if err != nil {
 		tokenError(c, err)
 		return
@@ -46,8 +45,8 @@ func (h *Handler) DeviceToken(ctx context.Context, c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) CLIRequest(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
-	grant, err := h.tokenService.LoginRequest(ctx, c.Query("user_code"))
+func (h *Handler) CLIRequest(c *gin.Context, identity ctxmeta.Identity) {
+	grant, err := h.tokenService.LoginRequest(c, c.Query("user_code"))
 	if err != nil {
 		tokenError(c, err)
 		return
@@ -55,21 +54,21 @@ func (h *Handler) CLIRequest(ctx context.Context, c *gin.Context, identity ctxme
 	c.JSON(http.StatusOK, gin.H{"name": grant.Name, "user_code": grant.UserCode, "expires_at": grant.ExpiresAt.UTC()})
 }
 
-func (h *Handler) AuthorizeCLI(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
+func (h *Handler) AuthorizeCLI(c *gin.Context, identity ctxmeta.Identity) {
 	var input entity.AuthorizeRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	if err := h.tokenService.Authorize(ctx, input.UserCode, identity.UserID, *input.Approve); err != nil {
+	if err := h.tokenService.Authorize(c, input.UserCode, identity.UserID, *input.Approve); err != nil {
 		tokenError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Authorization updated"})
 }
 
-func (h *Handler) ListTokens(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
-	tokens, err := h.tokenService.List(ctx, identity.UserID)
+func (h *Handler) ListTokens(c *gin.Context, identity ctxmeta.Identity) {
+	tokens, err := h.tokenService.List(c, identity.UserID)
 	if err != nil {
 		tokenError(c, err)
 		return
@@ -77,7 +76,7 @@ func (h *Handler) ListTokens(ctx context.Context, c *gin.Context, identity ctxme
 	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
 }
 
-func (h *Handler) RenameToken(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
+func (h *Handler) RenameToken(c *gin.Context, identity ctxmeta.Identity) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.InvalidRequest(c)
@@ -88,26 +87,26 @@ func (h *Handler) RenameToken(ctx context.Context, c *gin.Context, identity ctxm
 		util.InvalidRequest(c)
 		return
 	}
-	updated, err := h.tokenService.Rename(ctx, identity.UserID, id, input.Name)
+	updated, err := h.tokenService.Rename(c, identity.UserID, id, input.Name)
 	tokenUpdateResult(c, updated, err)
 }
 
-func (h *Handler) RevokeToken(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
+func (h *Handler) RevokeToken(c *gin.Context, identity ctxmeta.Identity) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.InvalidRequest(c)
 		return
 	}
-	updated, err := h.tokenService.Revoke(ctx, identity.UserID, id)
+	updated, err := h.tokenService.Revoke(c, identity.UserID, id)
 	tokenUpdateResult(c, updated, err)
 }
 
-func (h *Handler) Me(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
+func (h *Handler) Me(c *gin.Context, identity ctxmeta.Identity) {
 	c.JSON(http.StatusOK, protocol.IdentityResponse{ID: identity.UserID.String(), Username: identity.Username})
 }
 
-func (h *Handler) RevokeCurrentToken(ctx context.Context, c *gin.Context, identity ctxmeta.Identity) {
-	updated, err := h.tokenService.Revoke(ctx, identity.UserID, identity.TokenID)
+func (h *Handler) RevokeCurrentToken(c *gin.Context, identity ctxmeta.Identity) {
+	updated, err := h.tokenService.Revoke(c, identity.UserID, identity.TokenID)
 	tokenUpdateResult(c, updated, err)
 }
 

@@ -20,7 +20,7 @@ func TokenAuth(tokens *service.TokenService) gin.HandlerFunc {
 			rejectToken(c)
 			return
 		}
-		token, user, err := tokens.Authenticate(c.Request.Context(), fields[1])
+		token, user, err := tokens.Authenticate(c, fields[1])
 		if util.HandleContextError(c, err) {
 			return
 		}

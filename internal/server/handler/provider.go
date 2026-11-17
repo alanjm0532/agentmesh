@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/alanjm0532/agentmesh/internal/protocol"
@@ -13,6 +12,6 @@ var ProviderSet = wire.NewSet(
 	NewHandler,
 )
 
-func (h *Handler) APIPing(ctx context.Context, c *gin.Context) {
+func (h *Handler) APIPing(c *gin.Context) {
 	c.JSON(http.StatusOK, protocol.PingResponse{Message: "pong"})
 }
